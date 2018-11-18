@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+export OFFLINE=1
+
+%:
+	dh $@
+
+override_dh_clean:
+	dh_clean config.log config.cache config.status
+	if [ -d docs.bak ]; then rm -rf docs; mv docs.bak docs; fi
+
+override_dh_auto_configure:
+	if [ ! -d docs.bak ]; then cp -ra docs docs.bak; fi
+	dh_auto_configure -- \
+		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
+		--disable-crypto-dl \
+		--disable-apps-crypto-dl \
+		--enable-soap
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	$(MAKE) check | tee /tmp/tests.log
+	grep -q Fail /tmp/tests.log && (echo "Failures executing unit tests, exiting build"; exit 1) \
+		|| echo "Unit tests completed successfully"
+endif
+
+	touch build-stamp
+
+override_dh_install:
+	find debian/tmp/usr/lib -name "*.la" -exec \
+		sed -i -e "s,^dependency_libs=.*,dependency_libs=''," {} +
+	dh_install
+
+override_dh_installexamples:
+	dh_installexamples examples/*
+
+override_dh_installdocs:
+	dh_installdocs -X.sgml --all README debian/README.Debian
+
+override_dh_compress:
+	dh_compress -Xexamples/
+
+override_dh_makeshlibs:
+	dh_makeshlibs -V

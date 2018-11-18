@@ -1,0 +1,33 @@
+Description: Skip failing tests due to disabled lib plugins
+ Some tests require of dynamic loading of crypto libraries
+ in xmlsec1 apps - we disable this in the build, so only test
+ with the default openssl lib.
+Author: James Page <james.page@ubuntu.com>
+Forwarded: not-needed
+
+diff --git a/tests/testDSig.sh b/tests/testDSig.sh
+index 5ef44a4..c90f4dd 100755
+--- a/tests/testDSig.sh
++++ b/tests/testDSig.sh
+@@ -842,7 +842,7 @@ execDSigTest $res_success \
+ # test dynamic signature
+ #
+ ##########################################################################
+-if [ -n "$XMLSEC_TEST_NAME" -a "$XMLSEC_TEST_NAME" = "dsig-dynamic" ]; then
++if [ -n "$XMLSEC_TEST_NAME" -a "$XMLSEC_TEST_NAME" = "dsig-dynamic" -a "$crypto" = 'openssl' ]; then
+ echo "Dynamic signature template"
+ printf "    Create new signature                                 "
+ echo "$VALGRIND $xmlsec_app sign-tmpl $xmlsec_params --keys-file $keysfile --output $tmpfile" >> $logfile
+diff --git a/tests/testEnc.sh b/tests/testEnc.sh
+index 9970e33..f9ab2da 100755
+--- a/tests/testEnc.sh
++++ b/tests/testEnc.sh
+@@ -366,7 +366,7 @@ execEncTest $res_success \
+ # test dynamicencryption
+ #
+ ##########################################################################
+-if [ -n "$XMLSEC_TEST_NAME" -a "$XMLSEC_TEST_NAME" = "enc-dynamic" ]; then
++if [ -n "$XMLSEC_TEST_NAME" -a "$XMLSEC_TEST_NAME" = "enc-dynamic" -a $crypto = 'openssl']; then
+ echo "Dynamic encryption template"
+ printf "    Encrypt template                                     "
+ echo "$VALGRIND $xmlsec_app encrypt-tmpl $xmlsec_params --keys-file $keysfile --output $tmpfile" >> $logfile
