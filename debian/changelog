@@ -1,3 +1,10 @@
+xmlsec1 (1.2.27-2pexip1) pexip; urgency=medium
+
+  * Prepare Pexip packaging
+  * Update control for openssl 1.0 dependency
+
+ -- Vincent Sanders <vince@pexip.com>  Sun, 29 Mar 2020 23:35:32 +0100
+
 xmlsec1 (1.2.27-2) unstable; urgency=medium
 
   * upload to unstable
