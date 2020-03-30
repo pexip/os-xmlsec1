@@ -35,7 +35,7 @@ Depends:
  libgcrypt20-dev,
  libgnutls28-dev,
  libnss3-dev,
- libssl-dev (>= 1.0.0),
+ libssl1.0-dev | libssl-dev (<< 1.1),
  libxml2-dev (>= 2.8.0),
  libxmlsec1 (= ${binary:Version}),
  libxmlsec1-gcrypt (= ${binary:Version}),
