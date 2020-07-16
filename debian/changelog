@@ -1,3 +1,9 @@
+xmlsec1 (1.2.27-2pexip3) pexip; urgency=medium
+
+  * Rebuild in buster environment
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Thu, 16 Jul 2020 07:42:04 +0000
+
 xmlsec1 (1.2.27-2pexip2) pexip; urgency=medium
 
   * Fix openssl 1.0 dependency on dev package
