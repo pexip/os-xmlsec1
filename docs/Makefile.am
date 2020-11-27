@@ -15,7 +15,8 @@ EXTRA_DIST=\
 XMLSEC1_MAN=$(top_builddir)/man/xmlsec1.1
 XMLSEC_HTML=$(builddir)/xmlsec-man.html
 
-all: docs
+all:
+	@echo "======= Run 'make docs' in the xmlsec/docs folder to rebuild docs"
 
 # docs is legacy
 docs: docs-copy man-docs docs-format
@@ -23,12 +24,12 @@ docs: docs-copy man-docs docs-format
 docs-copy:
 	@( \
 		echo "Copying docs..."; \
-		if [ z"$(srcdir)" != z"$(builddir)" ]; \
+		if [ z"$(srcdir)" != z"$(builddir)" -a z"`uname`" != z"Darwin" ]; \
 		then \
 		    $(CP) -ru $(srcdir)/*.html $(srcdir)/*.ico $(srcdir)/images $(builddir)/  ; \
-		    chmod u+w $(builddir)/*.html ; \
-		    chmod u+w $(builddir)/*.ico ; \
-		    chmod -R u+w $(builddir)/images ; \
+		    (chmod u+w $(builddir)/*.html || true) ; \
+		    (chmod u+w $(builddir)/*.ico || true) ; \
+		    (chmod -R u+w $(builddir)/images || true) ; \
 		fi \
 	)
 
@@ -93,8 +94,8 @@ endif
 clean-local:
 	-rm -f *.stamp
 	( if [ z"$(srcdir)" != z"$(builddir)" ] ; then \
-		chmod -R u+w $(builddir)/images && rm -rf $(builddir)/images ; \
-		chmod -R u+w $(builddir)/src && rm -rf $(builddir)/src ; \
+		(chmod -R u+w $(builddir)/images || true) && rm -rf $(builddir)/images ; \
+		(chmod -R u+w $(builddir)/src || true) && rm -rf $(builddir)/src ; \
 		(for i in `find $(builddir) -name "*.html" -print` ; do \
 			echo "Removing files '$$i' ... " ; \
 			chmod -R u+w $$i && rm -f $$i ; \

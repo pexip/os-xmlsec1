@@ -331,6 +331,19 @@ execDSigTest $res_success \
     "$priv_key_option $topfolder/keys/rsakey$priv_key_suffix.$priv_key_format --pwd secret123" \
     "--trusted-$cert_format $topfolder/keys/cacert.$cert_format --enabled-key-data x509"
 
+if [ "z$crypto" = "zopenssl" -a "z$priv_key_suffix" != "z-win" ] ; then
+    # At least openssl supports --privkey-der next to --pkcs12 on non-Windows,
+    # so test that as well.
+    execDSigTest $res_success \
+        "" \
+        "aleksey-xmldsig-01/enveloping-sha256-rsa-sha256-der" \
+        "sha256 rsa-sha256" \
+        "rsa x509" \
+        "--pubkey-cert-$cert_format $topfolder/keys/rsacert.$cert_format" \
+        "--privkey-$cert_format $topfolder/keys/rsakey$priv_key_suffix.$cert_format" \
+        "--pubkey-cert-$cert_format $topfolder/keys/rsacert.$cert_format"
+fi
+
 execDSigTest $res_success \
     "aleksey-xmldsig-01" \
     "enveloping-sha256-rsa-sha256-relationship" \
@@ -420,7 +433,7 @@ execDSigTest $res_success \
     "aleksey-xmldsig-01/enveloped-ecdsa-java-bug" \
     "sha512 ecdsa-sha512" \
     "ecdsa x509" \
-    "--trusted-$cert_format $topfolder/keys/enveloped-ecdsa-java-bug-cert.$cert_format --enabled-key-data x509"
+    "--trusted-$cert_format $topfolder/keys/enveloped-ecdsa-java-bug-cert.$cert_format --enabled-key-data x509 --verification-time 2019-01-01+00:00:00"
 fi
 
 #
@@ -792,98 +805,98 @@ execDSigTest $res_success \
     "signature-rsa-detached-b64-transform" \
     "base64 sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-detached" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-detached-xpath-transform" \
     "xpath sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-detached-xslt-transform-retrieval-method" \
     "xslt sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-detached-xslt-transform" \
     "xslt sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00  $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-enveloped" \
     "enveloped-signature sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-enveloping" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest-x509-data-cert-chain" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest-x509-data-cert" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest-x509-data-issuer-serial" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest-x509-data-ski" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest-x509-data-subject-name" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --untrusted-$cert_format certs/rsa-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-manifest" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00 $url_map_rfc3161"
 
 execDSigTest $res_success \
     "phaos-xmldsig-three" \
     "signature-rsa-xpath-transform-enveloped" \
     "enveloped-signature xpath sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --X509-skip-strict-checks --verification-time 2009-01-01+10:00:00"
+    "--trusted-$cert_format certs/rsa-ca-cert.$cert_format --verification-time 2009-01-01+10:00:00"
 
 
 ##########################################################################
@@ -927,7 +940,7 @@ execDSigTest $res_fail \
     "merlin-xmldsig-twenty-three/signature-x509-crt-crl" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--X509-skip-strict-checks --trusted-$cert_format $topfolder/merlin-xmldsig-twenty-three/certs/ca.$cert_format $url_map_xml_stylesheet_2018"
+    "--trusted-$cert_format $topfolder/merlin-xmldsig-twenty-three/certs/ca.$cert_format $url_map_xml_stylesheet_2018"
 
 execDSigTest $res_fail \
     "" \

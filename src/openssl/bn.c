@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/bn.h>
 #include <libxml/tree.h>
 
 #include <xmlsec/xmlsec.h>
@@ -32,7 +33,7 @@
 
 /**
  * xmlSecOpenSSLNodeGetBNValue:
- * @cur: the poitner to an XML node.
+ * @cur: the pointer to an XML node.
  * @a: the BIGNUM buffer.
  *
  * Converts the node content from CryptoBinary format
