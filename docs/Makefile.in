@@ -324,6 +324,7 @@ XMLSEC_GNUTLS_CFLAGS = @XMLSEC_GNUTLS_CFLAGS@
 XMLSEC_GNUTLS_LIBS = @XMLSEC_GNUTLS_LIBS@
 XMLSEC_LIBDIR = @XMLSEC_LIBDIR@
 XMLSEC_LIBS = @XMLSEC_LIBS@
+XMLSEC_MANS = @XMLSEC_MANS@
 XMLSEC_NO_AES = @XMLSEC_NO_AES@
 XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING@
 XMLSEC_NO_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_CRYPTO_DYNAMIC_LOADING@
@@ -743,7 +744,8 @@ uninstall-am: uninstall-local
 .PRECIOUS: Makefile
 
 
-all: docs
+all:
+	@echo "======= Run 'make docs' in the xmlsec/docs folder to rebuild docs"
 
 # docs is legacy
 docs: docs-copy man-docs docs-format
@@ -751,12 +753,12 @@ docs: docs-copy man-docs docs-format
 docs-copy:
 	@( \
 		echo "Copying docs..."; \
-		if [ z"$(srcdir)" != z"$(builddir)" ]; \
+		if [ z"$(srcdir)" != z"$(builddir)" -a z"`uname`" != z"Darwin" ]; \
 		then \
 		    $(CP) -ru $(srcdir)/*.html $(srcdir)/*.ico $(srcdir)/images $(builddir)/  ; \
-		    chmod u+w $(builddir)/*.html ; \
-		    chmod u+w $(builddir)/*.ico ; \
-		    chmod -R u+w $(builddir)/images ; \
+		    (chmod u+w $(builddir)/*.html || true) ; \
+		    (chmod u+w $(builddir)/*.ico || true) ; \
+		    (chmod -R u+w $(builddir)/images || true) ; \
 		fi \
 	)
 
@@ -813,8 +815,8 @@ docs-copy:
 clean-local:
 	-rm -f *.stamp
 	( if [ z"$(srcdir)" != z"$(builddir)" ] ; then \
-		chmod -R u+w $(builddir)/images && rm -rf $(builddir)/images ; \
-		chmod -R u+w $(builddir)/src && rm -rf $(builddir)/src ; \
+		(chmod -R u+w $(builddir)/images || true) && rm -rf $(builddir)/images ; \
+		(chmod -R u+w $(builddir)/src || true) && rm -rf $(builddir)/src ; \
 		(for i in `find $(builddir) -name "*.html" -print` ; do \
 			echo "Removing files '$$i' ... " ; \
 			chmod -R u+w $$i && rm -f $$i ; \

@@ -50,6 +50,8 @@ struct _xmlSecMSCngKeyDataCtx {
 #define xmlSecMSCngKeyDataGetCtx(data) \
     ((xmlSecMSCngKeyDataCtxPtr)(((xmlSecByte*)(data)) + sizeof(xmlSecKeyData)))
 
+static int xmlSecMSCngKeyDataGetSize(xmlSecKeyDataPtr data);
+
 static int
 xmlSecMSCngKeyDataCertGetPubkey(PCCERT_CONTEXT cert, BCRYPT_KEY_HANDLE* key) {
     xmlSecAssert2(cert != NULL, -1);
@@ -366,7 +368,7 @@ xmlSecMSCngKeyDataDuplicate(xmlSecKeyDataPtr dst, xmlSecKeyDataPtr src) {
             return(-1);
         }
     } else if(srcCtx->pubkey != NULL) {
-        /* BCryptDuplicateKey() works with symmetic keys only, so go with
+        /* BCryptDuplicateKey() works with symmetric keys only, so go with
          * export + import instead */
         status = BCryptExportKey(srcCtx->pubkey,
             NULL,
@@ -474,9 +476,7 @@ static xmlSecSize
 xmlSecMSCngKeyDataDsaGetSize(xmlSecKeyDataPtr data) {
     xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecMSCngKeyDataDsaId), 0);
 
-    xmlSecNotImplementedError(NULL);
-
-    return(0);
+    return(xmlSecMSCngKeyDataGetSize(data));
 }
 
 static int
@@ -1576,9 +1576,7 @@ static xmlSecSize
 xmlSecMSCngKeyDataEcdsaGetSize(xmlSecKeyDataPtr data) {
     xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecMSCngKeyDataEcdsaId), 0);
 
-    xmlSecNotImplementedError(NULL);
-
-    return(0);
+    return(xmlSecMSCngKeyDataGetSize(data));
 }
 
 

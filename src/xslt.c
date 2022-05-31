@@ -35,7 +35,7 @@
 #include <xmlsec/keys.h>
 #include <xmlsec/parser.h>
 #include <xmlsec/errors.h>
-#include <xmlsec/private/xslt.h>
+#include "xslt.h"
 
 /**************************************************************************
  *
@@ -284,7 +284,7 @@ xmlSecXsltReadNode(xmlSecTransformPtr transform, xmlNodePtr node, xmlSecTransfor
 
 static int
 xmlSecXsltPushBin(xmlSecTransformPtr transform, const xmlSecByte* data,
-                                xmlSecSize dataSize, int final, xmlSecTransformCtxPtr transformCtx) {
+                  xmlSecSize dataSize, int final, xmlSecTransformCtxPtr transformCtx) {
     xmlSecXsltCtxPtr ctx;
     int ret;
 
@@ -305,10 +305,7 @@ xmlSecXsltPushBin(xmlSecTransformPtr transform, const xmlSecByte* data,
             xmlSecXmlError("xmlCreatePushParserCtxt", xmlSecTransformGetName(transform));
             return(-1);
         }
-
-        /* required for c14n! */
-        ctx->parserCtx->loadsubset = XML_DETECT_IDS | XML_COMPLETE_ATTRS;
-        ctx->parserCtx->replaceEntities = 1;
+        xmlSecParsePrepareCtxt(ctx->parserCtx);
 
         transform->status = xmlSecTransformStatusWorking;
     } else if(transform->status == xmlSecTransformStatusFinished) {
@@ -502,9 +499,15 @@ xmlSecXslProcess(xmlSecXsltCtxPtr ctx, xmlSecBufferPtr in, xmlSecBufferPtr out) 
     res = 0;
 
 done:
-    if(output != NULL) xmlOutputBufferClose(output);
-    if(docIn != NULL) xmlFreeDoc(docIn);
-    if(docOut != NULL) xmlFreeDoc(docOut);
+    if(output != NULL) {
+        xmlOutputBufferClose(output);
+    }
+    if(docIn != NULL) {
+        xmlFreeDoc(docIn);
+    }
+    if(docOut != NULL) {
+        xmlFreeDoc(docOut);
+    }
     return(res);
 }
 
@@ -539,7 +542,9 @@ xmlSecXsApplyStylesheet(xmlSecXsltCtxPtr ctx, xmlDocPtr doc) {
     }
     
 done:
-    if(xsltCtx != NULL) xsltFreeTransformContext(xsltCtx);
+    if(xsltCtx != NULL) {
+        xsltFreeTransformContext(xsltCtx);
+    }
     return res;    
 }
 
