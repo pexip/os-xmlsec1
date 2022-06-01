@@ -80,7 +80,7 @@ else
 docs:
 	@( \
 		echo "Copying api-docs..."; \
-		if [ z"$(srcdir)" != z"$(builddir)" ]; \
+		if [ z"$(srcdir)" != z"$(builddir)" -a z"`uname`" != z"Darwin" ]; \
 		then \
 		    $(CP) -ru $(SOURCE_FILES_TO_COPY) $(builddir)/ ; \
 		fi \
@@ -268,9 +268,9 @@ clean-local:
 	-rm -rf $(SOURCE_CODE_DIR) $(EXAMPLES_DIR) $(SCAN_DIR)/*.txt $(SGML_DIR) $(GTKDOC_MKDB_OUTPUT_DIR)
 	-rm -f *.stamp *.types index.sgml
 	@( if [ z"$(builddir)" != z"$(srcdir)" ] ; then \
-    	chmod -R u+w $(builddir)/src && rm -rf $(builddir)/src ; \
-    	chmod -R u+w $(builddir)/images && rm -rf $(builddir)/images ; \
-    	chmod -R u+w $(builddir)/*.png && rm -rf $(builddir)/*.png ; \
+    	(chmod -R u+w $(builddir)/src || true) && rm -rf $(builddir)/src ; \
+    	(chmod -R u+w $(builddir)/images || true) && rm -rf $(builddir)/images ; \
+    	(chmod -R u+w $(builddir)/*.png || true) && rm -rf $(builddir)/*.png ; \
 	 fi ; )
 
 distclean-local: clean-local

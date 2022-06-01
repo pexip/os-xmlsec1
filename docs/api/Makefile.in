@@ -264,6 +264,7 @@ XMLSEC_GNUTLS_CFLAGS = @XMLSEC_GNUTLS_CFLAGS@
 XMLSEC_GNUTLS_LIBS = @XMLSEC_GNUTLS_LIBS@
 XMLSEC_LIBDIR = @XMLSEC_LIBDIR@
 XMLSEC_LIBS = @XMLSEC_LIBS@
+XMLSEC_MANS = @XMLSEC_MANS@
 XMLSEC_NO_AES = @XMLSEC_NO_AES@
 XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING@
 XMLSEC_NO_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_CRYPTO_DYNAMIC_LOADING@
@@ -626,7 +627,7 @@ all: docs
 @BUILD_API_DOCS_FALSE@docs:
 @BUILD_API_DOCS_FALSE@	@( \
 @BUILD_API_DOCS_FALSE@		echo "Copying api-docs..."; \
-@BUILD_API_DOCS_FALSE@		if [ z"$(srcdir)" != z"$(builddir)" ]; \
+@BUILD_API_DOCS_FALSE@		if [ z"$(srcdir)" != z"$(builddir)" -a z"`uname`" != z"Darwin" ]; \
 @BUILD_API_DOCS_FALSE@		then \
 @BUILD_API_DOCS_FALSE@		    $(CP) -ru $(SOURCE_FILES_TO_COPY) $(builddir)/ ; \
 @BUILD_API_DOCS_FALSE@		fi \
@@ -813,9 +814,9 @@ clean-local:
 	-rm -rf $(SOURCE_CODE_DIR) $(EXAMPLES_DIR) $(SCAN_DIR)/*.txt $(SGML_DIR) $(GTKDOC_MKDB_OUTPUT_DIR)
 	-rm -f *.stamp *.types index.sgml
 	@( if [ z"$(builddir)" != z"$(srcdir)" ] ; then \
-    	chmod -R u+w $(builddir)/src && rm -rf $(builddir)/src ; \
-    	chmod -R u+w $(builddir)/images && rm -rf $(builddir)/images ; \
-    	chmod -R u+w $(builddir)/*.png && rm -rf $(builddir)/*.png ; \
+    	(chmod -R u+w $(builddir)/src || true) && rm -rf $(builddir)/src ; \
+    	(chmod -R u+w $(builddir)/images || true) && rm -rf $(builddir)/images ; \
+    	(chmod -R u+w $(builddir)/*.png || true) && rm -rf $(builddir)/*.png ; \
 	 fi ; )
 
 distclean-local: clean-local

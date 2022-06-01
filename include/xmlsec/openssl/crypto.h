@@ -9,17 +9,34 @@
 #ifndef __XMLSEC_OPENSSL_CRYPTO_H__
 #define __XMLSEC_OPENSSL_CRYPTO_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/dl.h>
 
 #include <openssl/err.h>
+#ifndef OPENSSL_IS_BORINGSSL
 #include <openssl/opensslconf.h>
+#endif /* OPENSSL_IS_BORINGSSL */
+
+#ifndef XMLSEC_NO_DSA
+#include <openssl/dsa.h>
+#include <openssl/evp.h>
+#endif /* XMLSEC_NO_DSA */
+
+#ifndef XMLSEC_NO_ECDSA
+#include <openssl/ecdsa.h>
+#include <openssl/evp.h>
+#endif /* XMLSEC_NO_ECDSA */
+
+#ifndef XMLSEC_NO_RSA
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
+#endif /* XMLSEC_NO_RSA */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 XMLSEC_CRYPTO_EXPORT xmlSecCryptoDLFunctionsPtr xmlSecCryptoGetFunctions_openssl(void);
 
@@ -262,8 +279,6 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformKWDes3GetKlass(void
  *
  *******************************************************************/
 #ifndef XMLSEC_NO_DSA
-#include <openssl/dsa.h>
-#include <openssl/evp.h>
 
 /**
  * xmlSecOpenSSLKeyDataDsaId:
@@ -310,8 +325,6 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformDsaSha256GetKlass(v
  *
  *******************************************************************/
 #ifndef XMLSEC_NO_ECDSA
-#include <openssl/ecdsa.h>
-#include <openssl/evp.h>
 
 /**
  * xmlSecOpenSSLKeyDataEcdsaId:
@@ -631,8 +644,6 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformRipemd160GetKlass(v
  *
  *******************************************************************/
 #ifndef XMLSEC_NO_RSA
-#include <openssl/rsa.h>
-#include <openssl/evp.h>
 
 /**
  * xmlSecOpenSSLKeyDataRsaId:

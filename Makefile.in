@@ -90,7 +90,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @XMLSEC_APPS_TRUE@am__append_1 = apps
-@XMLSEC_DOCS_TRUE@am__append_2 = man docs
+@XMLSEC_MANS_TRUE@am__append_2 = man
+@XMLSEC_DOCS_TRUE@am__append_3 = docs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -203,7 +204,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/xmlsec-openssl.pc.in $(srcdir)/xmlsec.pc.in \
 	$(srcdir)/xmlsec.spec.in $(srcdir)/xmlsecConf.sh.in AUTHORS \
 	COPYING ChangeLog INSTALL NEWS README TODO compile \
-	config.guess config.sub install-sh ltmain.sh missing
+	config.guess config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -388,6 +389,7 @@ XMLSEC_GNUTLS_CFLAGS = @XMLSEC_GNUTLS_CFLAGS@
 XMLSEC_GNUTLS_LIBS = @XMLSEC_GNUTLS_LIBS@
 XMLSEC_LIBDIR = @XMLSEC_LIBDIR@
 XMLSEC_LIBS = @XMLSEC_LIBS@
+XMLSEC_MANS = @XMLSEC_MANS@
 XMLSEC_NO_AES = @XMLSEC_NO_AES@
 XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING@
 XMLSEC_NO_CRYPTO_DYNAMIC_LOADING = @XMLSEC_NO_CRYPTO_DYNAMIC_LOADING@
@@ -482,7 +484,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
 SAFE_VERSION = @XMLSEC_VERSION_SAFE@
-SUBDIRS = include src $(am__append_1) $(am__append_2)
+SUBDIRS = include src $(am__append_1) $(am__append_2) $(am__append_3)
 TEST_APP = apps/xmlsec1$(EXEEXT)
 DEFAULT_CRYPTO = @XMLSEC_DEFAULT_CRYPTO@
 bin_SCRIPTS = xmlsec1-config
