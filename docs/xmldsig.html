@@ -1,380 +1,9 @@
+<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>XML Security Library: XML Digital Signature</title>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
+<link rel="stylesheet" href="css/main.css">
 </head>
 <body><table width="100%" valign="top"><tr valign="top">
 <td valign="top" align="left" width="210">
@@ -391,11 +20,10 @@ table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
 <li><a href="api/xmlsec-examples.html">Examples</a></li>
 </ul>
 <li><a href="xmldsig.html">XML Digital Signature</a></li>
-<ul><li><a href="http://www.aleksey.com/xmlsec/xmldsig-verifier.html">Online Verifier</a></li></ul>
 <li><a href="xmlenc.html">XML Encryption</a></li>
 <li><a href="c14n.html">XML Canonicalization</a></li>
 <li><a href="bugs.html">Reporting Bugs</a></li>
-<li><a href="http://www.aleksey.com/pipermail/xmlsec">Mailing list</a></li>
+<li><a href="mailing-list.html">Mailing list</a></li>
 <li><a href="related.html">Related</a></li>
 <li><a href="authors.html">Authors</a></li>
 </ul>
@@ -429,10 +57,8 @@ described in the W3C standard and provides API to sign prepared
 document templates,
 add signature(s) to a document "on-the-fly" or verify the signature(s)
 in the document. </p>
-<p> <a href="http://www.aleksey.com/xmlsec/xmldsig-verifier.html">XML Digital
-Signature
-Online Verifier</a> is an example of a real application based on XML
-Security Library. Using this tool you can verify any XML Signature
+<p><a href="xmlsec-man.html">The xmlsec command line tool</a>is an example of a real application
+based on XML Security Library. Using this tool you can verify any XML Signature
 and get detailed report on what and how was signed. </p>
 <div align="center">
             <h3>XML Security Library Interoperability Report</h3>
@@ -447,9 +73,11 @@ and get detailed report on what and how was signed. </p>
                   <td valign="top"><b>XMLSec with GCrypt</b></td>
                   <td valign="top"><b>XMLSec with NSS</b></td>
                   <td valign="top"><b>XMLSec with MSCrypto</b></td>
+                  <td valign="top"><b>XMLSec with MSCNG</b></td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">Detached Signature</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -464,10 +92,12 @@ same document reference with fragment (URI="#Object1")</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">Enveloped Signature: 
 same document reference (URI="") with Enveloped Signature Transform</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -482,10 +112,12 @@ generation/validation</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">Manifest DigestValue 
 generation/valdiation</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -500,9 +132,11 @@ element generation</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">XPointers '#xpointer(/)'</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -516,6 +150,7 @@ element generation</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">XPointers: full suppport</td>
@@ -524,9 +159,11 @@ element generation</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">XPath</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -541,9 +178,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">XSLT transform</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -558,9 +197,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">SHA1</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -574,9 +215,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">HMAC-SHA1</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -591,9 +234,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">RSA with SHA1</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -607,6 +252,7 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">N</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" valign="top">X509 CRL support</td>
@@ -615,9 +261,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">Minimal C14N (deprecated)</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -633,11 +281,13 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">
 <a href="http://www.w3.org/TR/xml-exc-c14n">Exlusive Canonical XML 1.0</a>
 </td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -653,9 +303,11 @@ function (can be used to implement enveloped signature)</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">Enveloped Signature</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -673,9 +325,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top"><b>XMLSec with GCrypt</b></td>
                   <td valign="top"><b>XMLSec with NSS</b></td>
                   <td valign="top"><b>XMLSec with MSCrypto</b></td>
+                  <td valign="top"><b>XMLSec with MSCNG</b></td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">MD5</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -689,9 +343,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">SHA256</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -705,9 +361,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">SHA512</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -721,6 +379,7 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">HMAC-SHA224</td>
@@ -729,9 +388,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">HMAC-SHA256</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -745,9 +406,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">HMAC-SHA512</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -761,6 +424,7 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">RSA-MD5</td>
@@ -768,6 +432,7 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">N</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
 </tr>
 <tr>
@@ -777,9 +442,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">RSA-SHA256</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -793,9 +460,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">RSA-SHA512</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -809,49 +478,56 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ECDSA-SHA1</td>
+                  <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
-                  <td valign="top">N</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ECDSA-SHA224</td>
+                  <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
-                  <td valign="top">N</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ECDSA-SHA256</td>
+                  <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
-                  <td valign="top">N</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ECDSA-SHA384</td>
+                  <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
-                  <td valign="top">N</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ECDSA-SHA512</td>
+                  <td valign="top">Y</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
-                  <td valign="top">N</td>
+                  <td valign="top">Y</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ESIGN-SHA1</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -865,9 +541,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ESIGN-SHA256</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -881,9 +559,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">ESIGN-SHA512</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -897,9 +577,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="width: 40%;" align="left" valign="top">XPointer transform</td>
+                  <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
                   <td valign="top">Y</td>
@@ -913,9 +595,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">Camellia Block Encryption 128</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -929,9 +613,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">Camellia Block Encryption 256</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -945,10 +631,11 @@ Algorithms (<a href="http://www.ietf.org/rfc/rfc4051.txt">RFC 4051</a>)</h4>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
-<td style="vertical-align: top; width: 40%;">Camellia
-Key Wrap 192</td>
+<td style="vertical-align: top; width: 40%;">Camellia Key Wrap 192</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -962,9 +649,11 @@ Key Wrap 192</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
+                  <td valign="top">N</td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">PSEC-KEM</td>
+                  <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
@@ -981,8 +670,8 @@ Key Wrap 192</td>
                   <td valign="top"><b>XMLSec with GnuTLS</b></td>
                   <td valign="top"><b>XMLSec with GCrypt</b></td>
                   <td valign="top"><b>XMLSec with NSS</b></td>
-                  <td valign="top">
-<b>XMLSec with MSCrypto</b> </td>
+                  <td valign="top"><b>XMLSec with MSCrypto</b></td>
+                  <td valign="top"><b>XMLSec with MSCNG</b></td>
 </tr>
 <tr>
 <td style="vertical-align: top; width: 40%;">GOST94 digests</td>
@@ -991,6 +680,7 @@ Key Wrap 192</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">Y<a href="#gost-mscrypto"><sup>(2)</sup></a>
+                  <td valign="top">N</td>
 </td>
 </tr>
 <tr>
@@ -1000,6 +690,7 @@ Key Wrap 192</td>
                   <td valign="top">N</td>
                   <td valign="top">N</td>
                   <td valign="top">Y<a href="#gost-mscrypto"><sup>(2)</sup></a>
+                  <td valign="top">N</td>
 </td>
 </tr>
 </tbody></table>

@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:hmac
@@ -20,13 +20,17 @@
 #include <string.h>
 
 #include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
-#include <xmlsec/keys.h>
-#include <xmlsec/transforms.h>
 #include <xmlsec/errors.h>
+#include <xmlsec/keys.h>
+#include <xmlsec/private.h>
+#include <xmlsec/transforms.h>
 
 #include <xmlsec/gnutls/app.h>
 #include <xmlsec/gnutls/crypto.h>
+
+#include "../cast_helpers.h"
+#include "../transform_helpers.h"
+
 
 /**************************************************************************
  *
@@ -38,24 +42,32 @@
 /**
  * xmlSecGnuTLSHmacGetMinOutputLength:
  *
+ * DEPRECATED (use @xmlSecTransformHmacGetMinOutputBitsSize instead).
  * Gets the value of min HMAC length.
  *
  * Returns: the min HMAC output length
  */
 int xmlSecGnuTLSHmacGetMinOutputLength(void)
 {
-    return xmlSecGCryptHmacGetMinOutputLength();
+    xmlSecSize val = xmlSecTransformHmacGetMinOutputBitsSize();
+    int res;
+
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(val, res, return(-1), NULL);
+    return res;
 }
 
 /**
  * xmlSecGnuTLSHmacSetMinOutputLength:
  * @min_length: the new min length
  *
+ * DEPRECATED (use @xmlSecTransformHmacSetMinOutputBitsSize instead).
  * Sets the min HMAC output length
  */
 void xmlSecGnuTLSHmacSetMinOutputLength(int min_length)
 {
-    xmlSecGCryptHmacSetMinOutputLength(min_length);
+    xmlSecSize val;
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(min_length, val, return, NULL);
+    xmlSecTransformHmacSetMinOutputBitsSize(val);
 }
 
 

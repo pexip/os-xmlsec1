@@ -4,7 +4,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_OPENSSL_APP_H__
 #define __XMLSEC_OPENSSL_APP_H__
@@ -12,6 +12,7 @@
 #include <openssl/pem.h>
 #include <openssl/bio.h>
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/keysmngr.h>
@@ -117,7 +118,6 @@ XMLSEC_CRYPTO_EXPORT xmlSecKeyPtr       xmlSecOpenSSLAppKeyFromCertLoadBIO(BIO* 
 #endif /* XMLSEC_NO_X509 */
 
 XMLSEC_CRYPTO_EXPORT void*              xmlSecOpenSSLAppGetDefaultPwdCallback(void);
-
 
 #ifdef __cplusplus
 }

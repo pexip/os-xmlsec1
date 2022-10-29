@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 /**
@@ -30,6 +30,9 @@
 #include <xmlsec/errors.h>
 
 #include <xmlsec/nss/crypto.h>
+
+#include "../cast_helpers.h"
+#include "../keysdata_helpers.h"
 
 #define XMLSEC_NSS_MAX_KEY_SIZE         32
 #define XMLSEC_NSS_MAX_IV_SIZE          32
@@ -81,6 +84,7 @@ xmlSecNssBlockCipherCtxInit(xmlSecNssBlockCipherCtxPtr ctx,
     PK11SlotInfo* slot;
     PK11SymKey* symKey;
     int ivLen;
+    xmlSecSize ivSize;
     SECStatus rv;
     int ret;
 
@@ -94,52 +98,52 @@ xmlSecNssBlockCipherCtxInit(xmlSecNssBlockCipherCtxPtr ctx,
     xmlSecAssert2(transformCtx != NULL, -1);
 
     ivLen = PK11_GetIVLength(ctx->cipher);
-    xmlSecAssert2(ivLen > 0, -1);
-    xmlSecAssert2((xmlSecSize)ivLen <= sizeof(ctx->iv), -1);
+    xmlSecAssert2(ivLen >= 0, -1);
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(ivLen, ivSize, return(-1), NULL);
+    xmlSecAssert2(ivSize <= sizeof(ctx->iv), -1);
 
     if(encrypt) {
         /* generate random iv */
         rv = PK11_GenerateRandom(ctx->iv, ivLen);
         if(rv != SECSuccess) {
-            xmlSecNssError2("PK11_GenerateRandom", cipherName,
-                            "size=%d", ivLen);
+            xmlSecNssError2("PK11_GenerateRandom", cipherName, "size=%d", ivLen);
             return(-1);
         }
 
         /* write iv to the output */
-        ret = xmlSecBufferAppend(out, ctx->iv, ivLen);
+        ret = xmlSecBufferAppend(out, ctx->iv, ivSize);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecBufferAppend", cipherName,
-                                 "size=%d", ivLen);
+            xmlSecInternalError2("xmlSecBufferAppend", cipherName, "size=%d", ivLen);
             return(-1);
         }
 
     } else {
         /* if we don't have enough data, exit and hope that
          * we'll have iv next time */
-        if(xmlSecBufferGetSize(in) < (xmlSecSize)ivLen) {
+        if(xmlSecBufferGetSize(in) < ivSize) {
             return(0);
         }
 
         /* copy iv to our buffer*/
         xmlSecAssert2(xmlSecBufferGetData(in) != NULL, -1);
-        memcpy(ctx->iv, xmlSecBufferGetData(in), ivLen);
+        memcpy(ctx->iv, xmlSecBufferGetData(in), ivSize);
 
         /* and remove from input */
-        ret = xmlSecBufferRemoveHead(in, ivLen);
+        ret = xmlSecBufferRemoveHead(in, ivSize);
         if(ret < 0) {
             xmlSecInternalError2("xmlSecBufferRemoveHead", cipherName,
-                                 "size=%d", ivLen);
+                "size=" XMLSEC_SIZE_FMT, ivSize);
             return(-1);
         }
     }
 
     memset(&keyItem, 0, sizeof(keyItem));
     keyItem.data = ctx->key;
-    keyItem.len  = ctx->keySize;
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(ctx->keySize, keyItem.len, return(-1), NULL);
+
     memset(&ivItem, 0, sizeof(ivItem));
     ivItem.data = ctx->iv;
-    ivItem.len  = ivLen;
+    XMLSEC_SAFE_CAST_INT_TO_UINT(ivLen, ivItem.len, return(-1), NULL);
 
     slot = PK11_GetBestSlot(ctx->cipher, NULL);
     if(slot == NULL) {
@@ -177,9 +181,10 @@ xmlSecNssBlockCipherCtxUpdate(xmlSecNssBlockCipherCtxPtr ctx,
                                   int encrypt,
                                   const xmlChar* cipherName,
                                   xmlSecTransformCtxPtr transformCtx) {
-    xmlSecSize inSize, inBlocks, outSize;
-    int blockLen;
+    xmlSecSize inSize, inBlocks, blockSize, outSize, outSize2;
+    int blockLen, maxOutLen, inLen;
     int outLen = 0;
+    const xmlSecByte* inBuf;
     xmlSecByte* outBuf;
     SECStatus rv;
     int ret;
@@ -194,45 +199,49 @@ xmlSecNssBlockCipherCtxUpdate(xmlSecNssBlockCipherCtxPtr ctx,
 
     blockLen = PK11_GetBlockSize(ctx->cipher, NULL);
     xmlSecAssert2(blockLen > 0, -1);
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(blockLen, blockSize, return(-1), NULL);
 
     inSize = xmlSecBufferGetSize(in);
     outSize = xmlSecBufferGetSize(out);
 
-    if(inSize < (xmlSecSize)blockLen) {
+    if(inSize < blockSize) {
         return(0);
     }
 
     if(encrypt) {
-        inBlocks = inSize / ((xmlSecSize)blockLen);
+        inBlocks = inSize / blockSize;
     } else {
         /* we want to have the last block in the input buffer
          * for padding check */
-        inBlocks = (inSize - 1) / ((xmlSecSize)blockLen);
+        inBlocks = (inSize - 1) / blockSize;
     }
-    inSize = inBlocks * ((xmlSecSize)blockLen);
+    inSize = inBlocks * blockSize;
 
     /* we write out the input size plus may be one block */
-    ret = xmlSecBufferSetMaxSize(out, outSize + inSize + blockLen);
+    ret = xmlSecBufferSetMaxSize(out, outSize + inSize + blockSize);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetMaxSize", cipherName, 
-                             "size=%d", outSize + inSize + blockLen);
+        xmlSecInternalError2("xmlSecBufferSetMaxSize", cipherName,
+            "size=" XMLSEC_SIZE_FMT, (outSize + inSize + blockSize));
         return(-1);
     }
-    outBuf = xmlSecBufferGetData(out) + outSize;
 
-    rv = PK11_CipherOp(ctx->cipherCtx, outBuf, &outLen, inSize + blockLen,
-                        xmlSecBufferGetData(in), inSize);
+    inBuf = xmlSecBufferGetData(in);
+    outBuf = xmlSecBufferGetData(out) + outSize;
+    XMLSEC_SAFE_CAST_SIZE_TO_INT((inSize + blockSize), maxOutLen, return(-1), NULL);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(inSize, inLen, return(-1), NULL);
+    rv = PK11_CipherOp(ctx->cipherCtx, outBuf, &outLen, maxOutLen, inBuf, inLen);
     if(rv != SECSuccess) {
         xmlSecNssError("PK11_CipherOp", cipherName);
         return(-1);
     }
-    xmlSecAssert2((xmlSecSize)outLen == inSize, -1);
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize2, return(-1), NULL);
+    xmlSecAssert2(outSize2 == inSize, -1);
 
     /* set correct output buffer size */
-    ret = xmlSecBufferSetSize(out, outSize + outLen);
+    ret = xmlSecBufferSetSize(out, outSize + outSize2);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferSetSize", cipherName,
-                             "size=%d", outSize + outLen);
+            "size=" XMLSEC_SIZE_FMT, (outSize + outSize2));
         return(-1);
     }
 
@@ -240,7 +249,7 @@ xmlSecNssBlockCipherCtxUpdate(xmlSecNssBlockCipherCtxPtr ctx,
     ret = xmlSecBufferRemoveHead(in, inSize);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferRemoveHead", cipherName,
-                             "size=%d", inSize);
+            "size=" XMLSEC_SIZE_FMT, inSize);
         return(-1);
     }
     return(0);
@@ -253,8 +262,9 @@ xmlSecNssBlockCipherCtxFinal(xmlSecNssBlockCipherCtxPtr ctx,
                                  int encrypt,
                                  const xmlChar* cipherName,
                                  xmlSecTransformCtxPtr transformCtx) {
-    xmlSecSize inSize, outSize;
-    int blockLen, outLen = 0;
+    xmlSecSize inSize, outSize, outSize2, blockSize;
+    int blockLen, maxOutLen, inLen;
+    int outLen = 0;
     xmlSecByte* inBuf;
     xmlSecByte* outBuf;
     SECStatus rv;
@@ -270,72 +280,91 @@ xmlSecNssBlockCipherCtxFinal(xmlSecNssBlockCipherCtxPtr ctx,
 
     blockLen = PK11_GetBlockSize(ctx->cipher, NULL);
     xmlSecAssert2(blockLen > 0, -1);
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(blockLen, blockSize, return(-1), NULL);
 
     inSize = xmlSecBufferGetSize(in);
     outSize = xmlSecBufferGetSize(out);
 
     if(encrypt != 0) {
-        xmlSecAssert2(inSize < (xmlSecSize)blockLen, -1);
+        xmlSecAssert2(inSize < blockSize, -1);
 
         /* create padding */
-        ret = xmlSecBufferSetMaxSize(in, blockLen);
+        ret = xmlSecBufferSetMaxSize(in, blockSize);
         if(ret < 0) {
             xmlSecInternalError2("xmlSecBufferSetMaxSize", cipherName,
-                                 "size=%d", blockLen);
+                "size=" XMLSEC_SIZE_FMT, blockSize);
             return(-1);
         }
         inBuf = xmlSecBufferGetData(in);
 
         /* generate random padding */
-        if((xmlSecSize)blockLen > (inSize + 1)) {
-            rv = PK11_GenerateRandom(inBuf + inSize, blockLen - inSize - 1);
+        if(blockSize > (inSize + 1)) {
+            xmlSecSize padSize = blockSize - inSize - 1;
+            int padLen;
+
+            XMLSEC_SAFE_CAST_SIZE_TO_INT(padSize, padLen, return(-1), NULL);
+            rv = PK11_GenerateRandom(inBuf + inSize, padLen);
             if(rv != SECSuccess) {
                 xmlSecNssError2("PK11_GenerateRandom", cipherName,
-                                "size=%d", ((int)blockLen - inSize - 1));
+                    "size=" XMLSEC_SIZE_FMT, (blockSize - inSize - 1));
                 return(-1);
             }
         }
-        inBuf[blockLen - 1] = blockLen - inSize;
-        inSize = blockLen;
+        xmlSecAssert2(blockSize - inSize < 256, -1);
+        XMLSEC_SAFE_CAST_SIZE_TO_BYTE((blockSize - inSize), inBuf[blockSize - 1], return(-1), cipherName);
+        inSize = blockSize;
     } else {
-        if(inSize != (xmlSecSize)blockLen) {
-            xmlSecInvalidSizeError("Input data", inSize, blockLen, cipherName);
+        if(inSize != blockSize) {
+            xmlSecInvalidSizeError("Input data", inSize, blockSize, cipherName);
             return(-1);
         }
     }
 
     /* process last block */
-    ret = xmlSecBufferSetMaxSize(out, outSize + 2 * blockLen);
+    ret = xmlSecBufferSetMaxSize(out, outSize + 2 * blockSize);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferSetMaxSize", cipherName,
-                            "size=%d", outSize + 2 * blockLen);
+            "size=" XMLSEC_SIZE_FMT, (outSize + 2 * blockSize));
         return(-1);
     }
-    outBuf = xmlSecBufferGetData(out) + outSize;
 
-    rv = PK11_CipherOp(ctx->cipherCtx, outBuf, &outLen, 2 * blockLen,
-                        xmlSecBufferGetData(in), inSize);
+    inBuf = xmlSecBufferGetData(in);
+    outBuf = xmlSecBufferGetData(out) + outSize;
+    XMLSEC_SAFE_CAST_SIZE_TO_INT((2 * blockSize), maxOutLen, return(-1), NULL);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(inSize, inLen, return(-1), NULL);
+
+    rv = PK11_CipherOp(ctx->cipherCtx, outBuf, &outLen, maxOutLen, inBuf, inLen);
     if(rv != SECSuccess) {
         xmlSecNssError("PK11_CipherOp", cipherName);
         return(-1);
     }
-    xmlSecAssert2((xmlSecSize)outLen == inSize, -1);
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize2, return(-1), NULL);
+    xmlSecAssert2(outSize2 == inSize, -1);
+
+    rv = PK11_Finalize(ctx->cipherCtx);
+    if(rv != SECSuccess) {
+        xmlSecNssError("PK11_Finalize", cipherName);
+        return(-1);
+    }
 
     if(encrypt == 0) {
+        xmlSecByte padding;
+
         /* check padding */
-        if(outLen < outBuf[blockLen - 1]) {
+        padding = outBuf[blockLen - 1];
+        if(outSize2 < (xmlSecSize)(padding)) {
             xmlSecInvalidSizeLessThanError("Input data padding",
-                    inSize, outBuf[blockLen - 1], cipherName);
+                    inSize, (xmlSecSize)(padding), cipherName);
             return(-1);
         }
-        outLen -= outBuf[blockLen - 1];
+        outSize2 -= outBuf[blockLen - 1];
     }
 
     /* set correct output buffer size */
-    ret = xmlSecBufferSetSize(out, outSize + outLen);
+    ret = xmlSecBufferSetSize(out, outSize + outSize2);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferSetSize", cipherName,
-                            "size=%d", outSize + outLen);
+            "size=" XMLSEC_SIZE_FMT, (outSize + outSize2));
         return(-1);
     }
 
@@ -343,7 +372,7 @@ xmlSecNssBlockCipherCtxFinal(xmlSecNssBlockCipherCtxPtr ctx,
     ret = xmlSecBufferRemoveHead(in, inSize);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferRemoveHead", cipherName,
-                            "size=%d", inSize);
+            "size=" XMLSEC_SIZE_FMT, inSize);
         return(-1);
     }
 
@@ -355,13 +384,11 @@ xmlSecNssBlockCipherCtxFinal(xmlSecNssBlockCipherCtxPtr ctx,
  *
  * EVP Block Cipher transforms
  *
- * xmlSecNssBlockCipherCtx block is located after xmlSecTransform structure
+ * xmlSecTransform + xmlSecNssBlockCipherCtx
  *
  *****************************************************************************/
-#define xmlSecNssBlockCipherSize        \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecNssBlockCipherCtx))
-#define xmlSecNssBlockCipherGetCtx(transform) \
-    ((xmlSecNssBlockCipherCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+XMLSEC_TRANSFORM_DECLARE(NssBlockCipher, xmlSecNssBlockCipherCtx)
+#define xmlSecNssBlockCipherSize XMLSEC_TRANSFORM_SIZE(NssBlockCipher)
 
 static int      xmlSecNssBlockCipherInitialize  (xmlSecTransformPtr transform);
 static void     xmlSecNssBlockCipherFinalize            (xmlSecTransformPtr transform);

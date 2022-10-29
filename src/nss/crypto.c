@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 /**
@@ -36,6 +36,8 @@
 #include <xmlsec/nss/app.h>
 #include <xmlsec/nss/crypto.h>
 #include <xmlsec/nss/x509.h>
+
+#include "../cast_helpers.h"
 
 static xmlSecCryptoDLFunctionsPtr gXmlSecNssFunctions = NULL;
 
@@ -409,6 +411,7 @@ xmlSecNssGetInternalKeySlot()
 int
 xmlSecNssGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
     SECStatus rv;
+    int len;
     int ret;
 
     xmlSecAssert2(buffer != NULL, -1);
@@ -416,15 +419,17 @@ xmlSecNssGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
 
     ret = xmlSecBufferSetSize(buffer, size);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBufferSetSize", NULL,
+                             "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 
     /* get random data */
-    rv = PK11_GenerateRandom((xmlSecByte*)xmlSecBufferGetData(buffer), size);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(size, len, return(-1), NULL);
+    rv = PK11_GenerateRandom((xmlSecByte*)xmlSecBufferGetData(buffer), len);
     if(rv != SECSuccess) {
         xmlSecNssError2("PK11_GenerateRandom", NULL,
-                        "size=%lu", (unsigned long)size);
+                        "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
     return(0);

@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:x509vfy
@@ -24,15 +24,14 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include <libxml/tree.h>
-
 #include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/keyinfo.h>
 #include <xmlsec/keysmngr.h>
 #include <xmlsec/base64.h>
 #include <xmlsec/errors.h>
+#include <xmlsec/private.h>
+#include <xmlsec/xmltree.h>
 
 #include <xmlsec/openssl/crypto.h>
 #include <xmlsec/openssl/evp.h>
@@ -43,6 +42,9 @@
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
 #include <openssl/x509v3.h>
+
+#include "../cast_helpers.h"
+#include "openssl_compat.h"
 
 #ifdef OPENSSL_IS_BORINGSSL
 typedef size_t x509_size_t;
@@ -68,14 +70,9 @@ struct _xmlSecOpenSSLX509StoreCtx {
  *
  * xmlSecOpenSSLKeyDataStoreX509Id:
  *
- * xmlSecOpenSSLX509StoreCtx is located after xmlSecTransform
- *
  ***************************************************************************/
-#define xmlSecOpenSSLX509StoreGetCtx(store) \
-    ((xmlSecOpenSSLX509StoreCtxPtr)(((xmlSecByte*)(store)) + \
-                                    sizeof(xmlSecKeyDataStoreKlass)))
-#define xmlSecOpenSSLX509StoreSize      \
-    (sizeof(xmlSecKeyDataStoreKlass) + sizeof(xmlSecOpenSSLX509StoreCtx))
+XMLSEC_KEY_DATA_STORE_DECLARE(OpenSSLX509Store, xmlSecOpenSSLX509StoreCtx)
+#define xmlSecOpenSSLX509StoreSize XMLSEC_KEY_DATA_STORE_SIZE(OpenSSLX509Store)
 
 static int              xmlSecOpenSSLX509StoreInitialize        (xmlSecKeyDataStorePtr store);
 static void             xmlSecOpenSSLX509StoreFinalize          (xmlSecKeyDataStorePtr store);
@@ -102,17 +99,18 @@ static X509*            xmlSecOpenSSLX509FindCert                       (STACK_O
                                                                          xmlChar *subjectName,
                                                                          xmlChar *issuerName,
                                                                          xmlChar *issuerSerial,
-                                                                         xmlChar *ski);
+                                                                         xmlSecByte * ski,
+                                                                         xmlSecSize skiSize);
 static X509*            xmlSecOpenSSLX509FindNextChainCert              (STACK_OF(X509) *chain,
                                                                          X509 *cert);
 static int              xmlSecOpenSSLX509VerifyCertAgainstCrls          (STACK_OF(X509_CRL) *crls,
                                                                          X509* cert);
-static X509_NAME*       xmlSecOpenSSLX509NameRead                       (xmlSecByte *str,
-                                                                         int len);
-static int              xmlSecOpenSSLX509NameStringRead                 (xmlSecByte **str,
-                                                                         int *strLen,
-                                                                         xmlSecByte *res,
-                                                                         int resLen,
+static X509_NAME*       xmlSecOpenSSLX509NameRead                       (const xmlChar *str);
+static int              xmlSecOpenSSLX509NameStringRead                 (const xmlChar **in,
+                                                                         xmlSecSize *inSize,
+                                                                         xmlSecByte *out,
+                                                                         xmlSecSize outSize,
+                                                                         xmlSecSize *outWritten,
                                                                          xmlSecByte delim,
                                                                          int ingoreTrailingSpaces);
 static int              xmlSecOpenSSLX509NamesCompare                   (X509_NAME *a,
@@ -153,18 +151,61 @@ xmlSecOpenSSLX509StoreGetKlass(void) {
 X509*
 xmlSecOpenSSLX509StoreFindCert(xmlSecKeyDataStorePtr store, xmlChar *subjectName,
                                 xmlChar *issuerName, xmlChar *issuerSerial,
-                                xmlChar *ski, xmlSecKeyInfoCtx* keyInfoCtx) {
+                                xmlChar *ski, xmlSecKeyInfoCtx* keyInfoCtx ) {
+    if(ski != NULL) {
+        xmlSecSize skiDecodedSize = 0;
+        int ret;
+
+        /* our usual trick with base64 decode */
+        ret = xmlSecBase64DecodeInPlace(ski, &skiDecodedSize);
+        if(ret < 0) {
+            xmlSecInternalError2("xmlSecBase64DecodeInPlace", NULL,
+                "ski=%s", xmlSecErrorsSafeString(ski));
+            return(NULL);
+        }
+
+        return(xmlSecOpenSSLX509StoreFindCert_ex(store, subjectName, issuerName, issuerSerial,
+            (xmlSecByte*)ski, skiDecodedSize, keyInfoCtx));
+    } else {
+        return(xmlSecOpenSSLX509StoreFindCert_ex(store, subjectName, issuerName, issuerSerial,
+            NULL, 0, keyInfoCtx));
+
+    }
+}
+
+/**
+ * xmlSecOpenSSLX509StoreFindCert_ex:
+ * @store:              the pointer to X509 key data store klass.
+ * @subjectName:        the desired certificate name.
+ * @issuerName:         the desired certificate issuer name.
+ * @issuerSerial:       the desired certificate issuer serial number.
+ * @ski:                the desired certificate SKI.
+ * @skiSize:            the desired certificate SKI size.
+ * @keyInfoCtx:         the pointer to <dsig:KeyInfo/> element processing context.
+ *
+ * Searches @store for a certificate that matches given criteria.
+ *
+ * Returns: pointer to found certificate or NULL if certificate is not found
+ * or an error occurs.
+ */
+X509*
+xmlSecOpenSSLX509StoreFindCert_ex(xmlSecKeyDataStorePtr store, xmlChar *subjectName,
+                                 xmlChar *issuerName,  xmlChar *issuerSerial,
+                                 xmlSecByte * ski, xmlSecSize skiSize,
+                                 xmlSecKeyInfoCtx* keyInfoCtx ATTRIBUTE_UNUSED) {
     xmlSecOpenSSLX509StoreCtxPtr ctx;
     X509* res = NULL;
 
     xmlSecAssert2(xmlSecKeyDataStoreCheckId(store, xmlSecOpenSSLX509StoreId), NULL);
-    xmlSecAssert2(keyInfoCtx != NULL, NULL);
+    UNREFERENCED_PARAMETER(keyInfoCtx);
 
     ctx = xmlSecOpenSSLX509StoreGetCtx(store);
     xmlSecAssert2(ctx != NULL, NULL);
 
     if((res == NULL) && (ctx->untrusted != NULL)) {
-        res = xmlSecOpenSSLX509FindCert(ctx->untrusted, subjectName, issuerName, issuerSerial, ski);
+        res = xmlSecOpenSSLX509FindCert(ctx->untrusted, subjectName,
+            issuerName, issuerSerial,
+            ski, skiSize);
     }
     return(res);
 }
@@ -198,7 +239,7 @@ xmlSecOpenSSLX509StoreVerify(xmlSecKeyDataStorePtr store, XMLSEC_STACK_OF_X509* 
     xmlSecAssert2(certs != NULL, NULL);
     xmlSecAssert2(keyInfoCtx != NULL, NULL);
 
-    xsc = X509_STORE_CTX_new();
+    xsc = X509_STORE_CTX_new_ex(xmlSecOpenSSLGetLibCtx(), NULL);
     if(xsc == NULL) {
         xmlSecOpenSSLError("X509_STORE_CTX_new",
                            xmlSecKeyDataStoreGetName(store));
@@ -286,7 +327,6 @@ xmlSecOpenSSLX509StoreVerify(xmlSecKeyDataStorePtr store, XMLSEC_STACK_OF_X509* 
     for(i = 0; i < sk_X509_num(certs2); ++i) {
         cert = sk_X509_value(certs2, i);
         if(xmlSecOpenSSLX509FindNextChainCert(certs2, cert) == NULL) {
-
             ret = X509_STORE_CTX_init(xsc, ctx->xst, cert, certs2);
             if(ret != 1) {
                 xmlSecOpenSSLError("X509_STORE_CTX_init",
@@ -309,7 +349,7 @@ xmlSecOpenSSLX509StoreVerify(xmlSecKeyDataStorePtr store, XMLSEC_STACK_OF_X509* 
                     goto done;
                 }
                 vpm_flags = X509_VERIFY_PARAM_get_flags(vpm);
-                vpm_flags &= (~X509_V_FLAG_CRL_CHECK);
+                vpm_flags &= (~((unsigned long)X509_V_FLAG_CRL_CHECK));
 
                 if(keyInfoCtx->certsVerificationTime > 0) {
                     vpm_flags |= X509_V_FLAG_USE_CHECK_TIME;
@@ -563,6 +603,7 @@ static int
 xmlSecOpenSSLX509StoreInitialize(xmlSecKeyDataStorePtr store) {
     const xmlChar* path;
     X509_LOOKUP *lookup = NULL;
+    int ret;
 
     xmlSecOpenSSLX509StoreCtxPtr ctx;
     xmlSecAssert2(xmlSecKeyDataStoreCheckId(store, xmlSecOpenSSLX509StoreId), -1);
@@ -579,7 +620,8 @@ xmlSecOpenSSLX509StoreInitialize(xmlSecKeyDataStorePtr store) {
         return(-1);
     }
 
-    if(!X509_STORE_set_default_paths(ctx->xst)) {
+    ret = X509_STORE_set_default_paths_ex(ctx->xst, xmlSecOpenSSLGetLibCtx(), NULL);
+    if(ret != 1) {
         xmlSecOpenSSLError("X509_STORE_set_default_paths",
                            xmlSecKeyDataStoreGetName(store));
         return(-1);
@@ -678,7 +720,7 @@ xmlSecOpenSSLX509VerifyCRL(X509_STORE* xst, X509_CRL *crl ) {
     xmlSecAssert2(xst != NULL, -1);
     xmlSecAssert2(crl != NULL, -1);
 
-    xsc = X509_STORE_CTX_new();
+    xsc = X509_STORE_CTX_new_ex(xmlSecOpenSSLGetLibCtx(), NULL);
     if(xsc == NULL) {
         xmlSecOpenSSLError("X509_STORE_CTX_new", NULL);
         goto err;
@@ -723,26 +765,27 @@ err:
 static X509*
 xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
                         xmlChar *issuerName, xmlChar *issuerSerial,
-                        xmlChar *ski) {
+                        xmlSecByte * ski, xmlSecSize skiSize) {
     X509 *cert = NULL;
-    x509_size_t i;
+    x509_size_t ii;
 
     xmlSecAssert2(certs != NULL, NULL);
 
     /* todo: may be this is not the fastest way to search certs */
+
+    /* search by subject name if available */
     if(subjectName != NULL) {
         X509_NAME *nm;
         X509_NAME *subj;
 
-        nm = xmlSecOpenSSLX509NameRead(subjectName, xmlStrlen(subjectName));
+        nm = xmlSecOpenSSLX509NameRead(subjectName);
         if(nm == NULL) {
             xmlSecInternalError2("xmlSecOpenSSLX509NameRead", NULL,
-                                 "subject=%s", xmlSecErrorsSafeString(subjectName));
+                "subject=%s", xmlSecErrorsSafeString(subjectName));
             return(NULL);
         }
-
-        for(i = 0; i < sk_X509_num(certs); ++i) {
-            cert = sk_X509_value(certs, i);
+        for(ii = 0; ii < sk_X509_num(certs); ++ii) {
+            cert = sk_X509_value(certs, ii);
             subj = X509_get_subject_name(cert);
             if(xmlSecOpenSSLX509NamesCompare(nm, subj) == 0) {
                 X509_NAME_free(nm);
@@ -750,16 +793,19 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
             }
         }
         X509_NAME_free(nm);
-    } else if((issuerName != NULL) && (issuerSerial != NULL)) {
+    }
+
+    /* search by issuer name+serial if available */
+    if((issuerName != NULL) && (issuerSerial != NULL)) {
         X509_NAME *nm;
         X509_NAME *issuer;
         BIGNUM *bn;
         ASN1_INTEGER *serial;
 
-        nm = xmlSecOpenSSLX509NameRead(issuerName, xmlStrlen(issuerName));
+        nm = xmlSecOpenSSLX509NameRead(issuerName);
         if(nm == NULL) {
             xmlSecInternalError2("xmlSecOpenSSLX509NameRead", NULL,
-                                 "issuer=%s", xmlSecErrorsSafeString(issuerName));
+                "issuer=%s", xmlSecErrorsSafeString(issuerName));
             return(NULL);
         }
 
@@ -771,7 +817,7 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
         }
         if(BN_dec2bn(&bn, (char*)issuerSerial) == 0) {
             xmlSecOpenSSLError("BN_dec2bn", NULL);
-            BN_free(bn);
+            BN_clear_free(bn);
             X509_NAME_free(nm);
             return(NULL);
         }
@@ -779,15 +825,15 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
         serial = BN_to_ASN1_INTEGER(bn, NULL);
         if(serial == NULL) {
             xmlSecOpenSSLError("BN_to_ASN1_INTEGER", NULL);
-            BN_free(bn);
+            BN_clear_free(bn);
             X509_NAME_free(nm);
             return(NULL);
         }
-        BN_free(bn);
+        BN_clear_free(bn);
 
 
-        for(i = 0; i < sk_X509_num(certs); ++i) {
-            cert = sk_X509_value(certs, i);
+        for(ii = 0; ii < sk_X509_num(certs); ++ii) {
+            cert = sk_X509_value(certs, ii);
             if(ASN1_INTEGER_cmp(X509_get_serialNumber(cert), serial) != 0) {
                 continue;
             }
@@ -798,24 +844,20 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
                 return(cert);
             }
         }
-
         X509_NAME_free(nm);
         ASN1_INTEGER_free(serial);
-    } else if(ski != NULL) {
-        int len;
-        int index;
+    }
+
+    /* search by SKI if available */
+    if((ski != NULL) && (skiSize > 0)){
+        int index, skiLen;
         X509_EXTENSION *ext;
         ASN1_OCTET_STRING *keyId;
 
-        /* our usual trick with base64 decode */
-        len = xmlSecBase64Decode(ski, (xmlSecByte*)ski, xmlStrlen(ski));
-        if(len < 0) {
-            xmlSecInternalError2("xmlSecBase64Decode", NULL,
-                                 "ski=%s", xmlSecErrorsSafeString(ski));
-            return(NULL);
-        }
-        for(i = 0; i < sk_X509_num(certs); ++i) {
-            cert = sk_X509_value(certs, i);
+        /* we need len as int since OpenSSL keyId->length is int */
+        XMLSEC_SAFE_CAST_SIZE_TO_INT(skiSize, skiLen, return(NULL), NULL);
+        for(ii = 0; ii < sk_X509_num(certs); ++ii) {
+            cert = sk_X509_value(certs, ii);
             index = X509_get_ext_by_NID(cert, NID_subject_key_identifier, -1);
             if(index < 0) {
                 continue;
@@ -828,7 +870,8 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
             if(keyId == NULL) {
                 continue;
             }
-            if((keyId->length == len) && (memcmp(keyId->data, ski, len) == 0)) {
+
+            if((keyId->length == skiLen) && (memcmp(keyId->data, ski, skiSize) == 0)) {
                 ASN1_OCTET_STRING_free(keyId);
                 return(cert);
             }
@@ -839,21 +882,96 @@ xmlSecOpenSSLX509FindCert(STACK_OF(X509) *certs, xmlChar *subjectName,
     return(NULL);
 }
 
+static unsigned long
+xmlSecOpenSSLX509GetSubjectHash(X509* x) {
+    X509_NAME* name;
+    unsigned long res;
+
+    xmlSecAssert2(x != NULL, 0);
+
+    name = X509_get_subject_name(x);
+    if(name == NULL) {
+        xmlSecOpenSSLError("X509_get_subject_name", NULL);
+        return(0);
+    }
+
+    res = X509_NAME_hash_ex(name, xmlSecOpenSSLGetLibCtx(), NULL, NULL);
+    if(res == 0) {
+        xmlSecOpenSSLError("X509_NAME_hash_ex", NULL);
+        return(0);
+    }
+
+    return(res);
+}
+
+static unsigned long
+xmlSecOpenSSLX509GetIssuerHash(X509* x) {
+    X509_NAME* name;
+    unsigned long res;
+
+    xmlSecAssert2(x != NULL, 0);
+
+    name = X509_get_issuer_name(x);
+    if(name == NULL) {
+        xmlSecOpenSSLError("X509_get_issuer_name", NULL);
+        return(0);
+    }
+
+    res = X509_NAME_hash_ex(name, xmlSecOpenSSLGetLibCtx(), NULL, NULL);
+    if(res == 0) {
+        xmlSecOpenSSLError("X509_NAME_hash_ex", NULL);
+        return(0);
+    }
+
+    return(res);
+}
+
+/* Try to find cert "up-the-chain" (i.e. with issuer matching given cert) */
 static X509*
 xmlSecOpenSSLX509FindNextChainCert(STACK_OF(X509) *chain, X509 *cert) {
-    unsigned long certSubjHash;
-    x509_size_t i;
+    unsigned long certNameHash;
+    unsigned long certNameHash2;
+    x509_size_t ii;
 
     xmlSecAssert2(chain != NULL, NULL);
     xmlSecAssert2(cert != NULL, NULL);
 
-    certSubjHash = X509_subject_name_hash(cert);
-    for(i = 0; i < sk_X509_num(chain); ++i) {
-        if((sk_X509_value(chain, i) != cert) &&
-           (X509_issuer_name_hash(sk_X509_value(chain, i)) == certSubjHash)) {
+    certNameHash = xmlSecOpenSSLX509GetSubjectHash(cert);
+    if(certNameHash == 0) {
+        xmlSecInternalError("xmlSecOpenSSLX509GetSubjectHash", NULL);
+        return(NULL);
+    }
+    for(ii = 0; ii < sk_X509_num(chain); ++ii) {
+        X509* cert_ii = sk_X509_value(chain, ii);
+        xmlSecAssert2(cert_ii != NULL, NULL);
 
-            return(sk_X509_value(chain, i));
+        if(cert == cert_ii) {
+            /* same cert, skip for self-signed certs */
+            continue;
         }
+
+        certNameHash2 = xmlSecOpenSSLX509GetSubjectHash(cert_ii);
+        if(certNameHash2 == 0) {
+            xmlSecInternalError("xmlSecOpenSSLX509GetSubjectHash", NULL);
+            return(NULL);
+        }
+        if(certNameHash == certNameHash2) {
+            /* same cert but different copy, skip for self-signed certs */
+            continue;
+        }
+
+        certNameHash2 = xmlSecOpenSSLX509GetIssuerHash(cert_ii);
+        if(certNameHash2 == 0) {
+            xmlSecInternalError("xmlSecOpenSSLX509GetIssuerHash", NULL);
+            return(NULL);
+        }
+        if(certNameHash != certNameHash2) {
+            /* issuer doesn't match */
+            continue;
+        }
+
+        /* found it! cert_ii issuer matches cert */
+        return(cert_ii);
     }
     return(NULL);
 }
@@ -914,139 +1032,191 @@ xmlSecOpenSSLX509VerifyCertAgainstCrls(STACK_OF(X509_CRL) *crls, X509* cert) {
 }
 
 static X509_NAME *
-xmlSecOpenSSLX509NameRead(xmlSecByte *str, int len) {
+xmlSecOpenSSLX509NameRead(const xmlChar *str) {
     xmlSecByte name[256];
     xmlSecByte value[256];
-    int nameLen, valueLen;
-    X509_NAME *nm;
+    xmlSecSize strSize, nameSize, valueSize;
+    X509_NAME *nm = NULL;
+    X509_NAME *res = NULL;
     int type = MBSTRING_ASC;
+    int valueLen;
+    int ret;
 
     xmlSecAssert2(str != NULL, NULL);
 
     nm = X509_NAME_new();
     if(nm == NULL) {
         xmlSecOpenSSLError("X509_NAME_new", NULL);
-        return(NULL);
+        goto done;
     }
 
-    while(len > 0) {
+    strSize = xmlSecStrlen(str);
+    while(strSize > 0) {
         /* skip spaces after comma or semicolon */
-        while((len > 0) && isspace(*str)) {
-            ++str; --len;
+        while((strSize > 0) && isspace(*str)) {
+            ++str; --strSize;
         }
 
-        nameLen = xmlSecOpenSSLX509NameStringRead(&str, &len, name, sizeof(name), '=', 0);
-        if(nameLen < 0) {
+        nameSize = 0;
+        ret = xmlSecOpenSSLX509NameStringRead(&str, &strSize,
+            name, sizeof(name), &nameSize, '=', 0);
+        if(ret < 0) {
             xmlSecInternalError("xmlSecOpenSSLX509NameStringRead", NULL);
-            X509_NAME_free(nm);
-            return(NULL);
+            goto done;
         }
-        name[nameLen] = '\0';
-        if(len > 0) {
-            ++str; --len;
+        name[nameSize] = '\0';
+
+        /* handle synonymous */
+        if(xmlStrcmp(name, BAD_CAST "E") == 0) {
+            ret = xmlStrPrintf(name, sizeof(name), "emailAddress");
+            if(ret < 0) {
+                xmlSecInternalError("xmlStrPrintf(emailAddress)", NULL);
+                goto done;
+            }
+        }
+
+        if(strSize > 0) {
+            ++str; --strSize;
             if((*str) == '\"') {
-                ++str; --len;
-                valueLen = xmlSecOpenSSLX509NameStringRead(&str, &len,
-                                        value, sizeof(value), '"', 1);
-                if(valueLen < 0) {
+                ++str; --strSize;
+                ret = xmlSecOpenSSLX509NameStringRead(&str, &strSize,
+                    value, sizeof(value), &valueSize, '"', 1);
+                if(ret < 0) {
                     xmlSecInternalError("xmlSecOpenSSLX509NameStringRead", NULL);
-                    X509_NAME_free(nm);
-                    return(NULL);
+                    goto done;
                 }
 
                 /* skip quote */
-                if((len <= 0) || ((*str) != '\"')) {
+                if((strSize <= 0) || ((*str) != '\"')) {
                     xmlSecInvalidIntegerDataError("char", (*str), "quote '\"'", NULL);
-                    X509_NAME_free(nm);
-                    return(NULL);
+                    goto done;
                 }
-                ++str; --len;
+                ++str; --strSize;
 
                 /* skip spaces before comma or semicolon */
-                while((len > 0) && isspace(*str)) {
-                    ++str; --len;
+                while((strSize > 0) && isspace(*str)) {
+                    ++str; --strSize;
                 }
-                if((len > 0) && ((*str) != ',')) {
+                if((strSize > 0) && ((*str) != ',')) {
                     xmlSecInvalidIntegerDataError("char", (*str), "comma ','", NULL);
-                    X509_NAME_free(nm);
-                    return(NULL);
+                    goto done;
                 }
-                if(len > 0) {
-                    ++str; --len;
+                if(strSize > 0) {
+                    ++str; --strSize;
                 }
                 type = MBSTRING_ASC;
             } else if((*str) == '#') {
                 /* TODO: read octect values */
                 xmlSecNotImplementedError("reading octect values is not implemented yet");
-                X509_NAME_free(nm);
-                return(NULL);
+                goto done;
             } else {
-                valueLen = xmlSecOpenSSLX509NameStringRead(&str, &len,
-                                        value, sizeof(value), ',', 1);
-                if(valueLen < 0) {
+                ret = xmlSecOpenSSLX509NameStringRead(&str, &strSize,
+                                        value, sizeof(value), &valueSize, ',', 1);
+                if(ret < 0) {
                     xmlSecInternalError("xmlSecOpenSSLX509NameStringRead", NULL);
-                    X509_NAME_free(nm);
-                    return(NULL);
+                    goto done;
                 }
                 type = MBSTRING_ASC;
             }
         } else {
-            valueLen = 0;
+            valueSize = 0;
         }
-        value[valueLen] = '\0';
-        if(len > 0) {
-            ++str; --len;
+        value[valueSize] = '\0';
+        if(strSize > 0) {
+            ++str; --strSize;
         }
-        X509_NAME_add_entry_by_txt(nm, (char*)name, type, value, valueLen, -1, 0);
+        XMLSEC_SAFE_CAST_SIZE_TO_INT(valueSize, valueLen, goto done, NULL);
+        ret = X509_NAME_add_entry_by_txt(nm, (char*)name, type, value, valueLen, -1, 0);
+        if(ret != 1) {
+            xmlSecOpenSSLError2("X509_NAME_add_entry_by_txt", NULL,
+                "name=%s", xmlSecErrorsSafeString(name));
+            goto done;
+        }
     }
 
-    return(nm);
+    /* success */
+    res = nm;
+    nm = NULL;
+
+done:
+    if(nm != NULL) {
+        X509_NAME_free(nm);
+    }
+    return(res);
 }
 
 static int
-xmlSecOpenSSLX509NameStringRead(xmlSecByte **str, int *strLen,
-                        xmlSecByte *res, int resLen,
-                        xmlSecByte delim, int ingoreTrailingSpaces) {
-    xmlSecByte *p, *q, *nonSpace;
+xmlSecOpenSSLX509NameStringRead(const xmlChar **in, xmlSecSize *inSize,
+                            xmlSecByte *out, xmlSecSize outSize,
+                            xmlSecSize *outWritten,
+                            xmlSecByte delim, int ingoreTrailingSpaces) {
+    xmlSecSize ii, jj, nonSpace;
 
-    xmlSecAssert2(str != NULL, -1);
-    xmlSecAssert2(strLen != NULL, -1);
-    xmlSecAssert2(res != NULL, -1);
+    xmlSecAssert2(in != NULL, -1);
+    xmlSecAssert2((*in) != NULL, -1);
+    xmlSecAssert2(inSize != NULL, -1);
+    xmlSecAssert2(out != NULL, -1);
 
-    p = (*str);
-    nonSpace = q = res;
-    while(((p - (*str)) < (*strLen)) && ((*p) != delim) && ((q - res) < resLen)) {
-        if((*p) != '\\') {
-            if(ingoreTrailingSpaces && !isspace(*p)) {
-                nonSpace = q;
+    ii = jj = nonSpace = 0;
+    while (ii < (*inSize)) {
+        xmlSecByte inCh, inCh2, outCh;
+
+        inCh = (*in)[ii];
+        if (inCh == delim) {
+            break;
+        }
+        if (jj >= outSize) {
+            xmlSecInvalidSizeOtherError("output buffer is too small", NULL);
+            return(-1);
+        }
+
+        if (inCh == '\\') {
+            /* try to move to next char after \\ */
+            ++ii;
+            if (ii >= (*inSize)) {
+                break;
             }
-            *(q++) = *(p++);
-        } else {
-            ++p;
-            nonSpace = q;
-            if(xmlSecIsHex((*p))) {
-                if((p - (*str) + 1) >= (*strLen)) {
+            inCh = (*in)[ii];
+
+            /* if next char after \\ is a hex then we expect \\XX, otherwise we just remove \\ */
+            if (xmlSecIsHex(inCh)) {
+                /* try to move to next char after \\X */
+                ++ii;
+                if (ii >= (*inSize)) {
                     xmlSecInvalidDataError("two hex digits expected", NULL);
                     return(-1);
                 }
-                *(q++) = xmlSecGetHex(p[0]) * 16 + xmlSecGetHex(p[1]);
-                p += 2;
-            } else {
-                if(((++p) - (*str)) >= (*strLen)) {
-                    xmlSecInvalidDataError("escaped symbol missed", NULL);
+                inCh2 = (*in)[ii];
+                if (!xmlSecIsHex(inCh2)) {
+                    xmlSecInvalidDataError("two hex digits expected", NULL);
                     return(-1);
                 }
-                *(q++) = *(p++);
+                outCh = (xmlSecByte)(xmlSecGetHex(inCh) * 16 + xmlSecGetHex(inCh2));
+            } else {
+                outCh = inCh;
             }
+        } else {
+            outCh = inCh;
+        }
+
+        out[jj] = outCh;
+        ++ii;
+        ++jj;
+
+        if (ingoreTrailingSpaces && !isspace(outCh)) {
+            nonSpace = jj;
         }
     }
-    if(((p - (*str)) < (*strLen)) && ((*p) != delim)) {
-        xmlSecInvalidSizeOtherError("buffer is too small", NULL);
-        return(-1);
+
+    (*inSize) -= ii;
+    (*in) += ii;
+
+    if (ingoreTrailingSpaces) {
+        (*outWritten) = nonSpace;
+    } else {
+        (*outWritten) = (jj);
     }
-    (*strLen) -= (int)(p - (*str));
-    (*str) = p;
-    return(int)((ingoreTrailingSpaces) ? nonSpace - res + 1 : q - res);
+    return(0);
 }
 
 /*
@@ -1172,7 +1342,9 @@ xmlSecOpenSSLX509_NAME_ENTRY_cmp(const X509_NAME_ENTRY * const *a, const X509_NA
     }
 
     if(a_len > 0) {
-        ret = memcmp(ASN1_STRING_get0_data(a_value), ASN1_STRING_get0_data(b_value), a_len);
+        xmlSecSize a_size;
+        XMLSEC_SAFE_CAST_INT_TO_SIZE(a_len, a_size, return(-1), NULL);
+        ret = memcmp(ASN1_STRING_get0_data(a_value), ASN1_STRING_get0_data(b_value), a_size);
         if(ret != 0) {
             return(ret);
         }

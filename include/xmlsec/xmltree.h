@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_TREE_H__
 #define __XMLSEC_TREE_H__
@@ -15,11 +15,14 @@
 
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
+
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 
-#ifdef WIN32
+
+#if defined(XMLSEC_WINDOWS)
 #include <windows.h>
-#endif /* WIN32 */
+#endif /* defined(XMLSEC_WINDOWS) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,10 +37,13 @@ extern "C" {
 #define xmlSecNodeGetName(node) \
     (((node)) ? ((const char*)((node)->name)) : NULL)
 
-XMLSEC_EXPORT const xmlChar*	xmlSecGetDefaultLineFeed(void);
-XMLSEC_EXPORT void		xmlSecSetDefaultLineFeed(const xmlChar *linefeed);
+XMLSEC_EXPORT const xmlChar*    xmlSecGetDefaultLineFeed(void);
+XMLSEC_EXPORT void        xmlSecSetDefaultLineFeed(const xmlChar *linefeed);
 
 XMLSEC_EXPORT const xmlChar*    xmlSecGetNodeNsHref     (const xmlNodePtr cur);
+XMLSEC_EXPORT int               xmlSecGetNodeContentAsSize(const xmlNodePtr cur,
+                                                         xmlSecSize defValue,
+                                                         xmlSecSize* res);
 XMLSEC_EXPORT int               xmlSecCheckNodeName     (const xmlNodePtr cur,
                                                          const xmlChar *name,
                                                          const xmlChar *ns);
@@ -125,9 +131,9 @@ XMLSEC_EXPORT int               xmlSecPrintXmlString    (FILE * fd,
  * Macro. Returns the hex value of the @c.
  */
 #define xmlSecGetHex(c) \
-    ( (('0' <= (c)) && ((c) <= '9')) ? (c) - '0' : \
-    ( (('a' <= (c)) && ((c) <= 'f')) ? (c) - 'a' + 10 :  \
-    ( (('A' <= (c)) && ((c) <= 'F')) ? (c) - 'A' + 10 : 0 )))
+        ( (('0' <= (c)) && ((c) <= '9')) ? (c) - '0' : \
+        ( (('a' <= (c)) && ((c) <= 'f')) ? (c) - 'a' + 10 :  \
+        ( (('A' <= (c)) && ((c) <= 'F')) ? (c) - 'A' + 10 : 0 )))
 
 /*************************************************************************
  *
@@ -276,7 +282,7 @@ XMLSEC_EXPORT void              xmlSecQName2BitMaskDebugXmlDump(xmlSecQName2BitM
  * Windows string conversions
  *
  ************************************************************************/
-#ifdef WIN32
+#if defined(XMLSEC_WINDOWS)
 XMLSEC_EXPORT LPWSTR             xmlSecWin32ConvertLocaleToUnicode(const char* str);
 
 XMLSEC_EXPORT LPWSTR             xmlSecWin32ConvertUtf8ToUnicode  (const xmlChar* str);
@@ -287,9 +293,7 @@ XMLSEC_EXPORT char*              xmlSecWin32ConvertUtf8ToLocale   (const xmlChar
 
 XMLSEC_EXPORT xmlChar*           xmlSecWin32ConvertTstrToUtf8     (LPCTSTR str);
 XMLSEC_EXPORT LPTSTR             xmlSecWin32ConvertUtf8ToTstr     (const xmlChar*  str);
-
-
-#endif /* WIN32 */
+#endif /* defined(XMLSEC_WINDOWS) */
 
 
 #ifdef __cplusplus

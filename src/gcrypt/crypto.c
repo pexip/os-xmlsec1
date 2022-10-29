@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:crypto
@@ -302,7 +302,7 @@ xmlSecGCryptGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
     ret = xmlSecBufferSetSize(buffer, size);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecBufferSetSize", NULL,
-                             "size=%d", size);
+                             "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 

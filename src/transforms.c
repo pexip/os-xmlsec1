@@ -5,10 +5,10 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
- * SECTION:transforms 
+ * SECTION:transforms
  * @Short_description: Transform object functions.
  * @Stability: Stable
  *
@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -70,6 +71,10 @@
 #include <xmlsec/errors.h>
 
 #include "xslt.h"
+#include "cast_helpers.h"
+#include "transform_helpers.h"
+
+#define XMLSEC_TRANSFORM_XPOINTER_TMPL "xpointer(id(\'%s\'))"
 
 /**************************************************************************
  *
@@ -256,7 +261,7 @@ int
 xmlSecTransformUriTypeCheck(xmlSecTransformUriType type, const xmlChar* uri) {
     xmlSecTransformUriType uriType = 0;
 
-    if((uri == NULL) || (xmlStrlen(uri) == 0)) {
+    if((uri == NULL) || (xmlSecStrlen(uri) == 0)) {
         uriType = xmlSecTransformUriTypeEmpty;
     } else if(uri[0] == '#') {
         uriType = xmlSecTransformUriTypeSameDocument;
@@ -698,6 +703,7 @@ xmlSecTransformCtxSetUri(xmlSecTransformCtxPtr ctx, const xmlChar* uri, xmlNodeP
     xmlSecNodeSetType nodeSetType = xmlSecNodeSetTree;
     const xmlChar* xptr;
     xmlChar* buf = NULL;
+    int uriLen;
     int useVisa3DHack = 0;
     int ret;
 
@@ -715,7 +721,7 @@ xmlSecTransformCtxSetUri(xmlSecTransformCtxPtr ctx, const xmlChar* uri, xmlNodeP
     }
 
     /* is it an empty uri? */
-    if((uri == NULL) || (xmlStrlen(uri) == 0)) {
+    if((uri == NULL) || (xmlSecStrlen(uri) == 0)) {
         return(0);
     }
 
@@ -739,7 +745,8 @@ xmlSecTransformCtxSetUri(xmlSecTransformCtxPtr ctx, const xmlChar* uri, xmlNodeP
         return(0);
     }
 
-    ctx->uri = xmlStrndup(uri, (int)(xptr - uri));
+    XMLSEC_SAFE_CAST_PTRDIFF_TO_INT((xptr - uri), uriLen, return(-1), NULL);
+    ctx->uri = xmlStrndup(uri, uriLen);
     if(ctx->uri == NULL) {
         xmlSecStrdupError(uri, NULL);
         return(-1);
@@ -761,18 +768,19 @@ xmlSecTransformCtxSetUri(xmlSecTransformCtxPtr ctx, const xmlChar* uri, xmlNodeP
         nodeSetType = xmlSecNodeSetTreeWithoutComments;
         useVisa3DHack = 1;
     } else {
-        static const char tmpl[] = "xpointer(id(\'%s\'))";
         xmlSecSize size;
+        int len;
 
         /* we need to add "xpointer(id('..')) because otherwise we have
          * problems with numeric ("111" and so on) and other "strange" ids */
-        size = xmlStrlen(BAD_CAST tmpl) + xmlStrlen(xptr) + 2;
+        len = xmlStrlen(BAD_CAST XMLSEC_TRANSFORM_XPOINTER_TMPL) + xmlStrlen(xptr) + 2;
+        XMLSEC_SAFE_CAST_INT_TO_SIZE(len, size, return(-1), NULL);
         buf = (xmlChar*)xmlMalloc(size * sizeof(xmlChar));
         if(buf == NULL) {
             xmlSecMallocError(size * sizeof(xmlChar), NULL);
             return(-1);
         }
-        ret = xmlStrPrintf(buf, size, tmpl, xptr + 1);
+        ret = xmlStrPrintf(buf, len, XMLSEC_TRANSFORM_XPOINTER_TMPL, xptr + 1);
         if(ret < 0) {
             xmlSecXmlError("xmlStrPrintf", NULL);
              xmlFree(buf);
@@ -939,7 +947,7 @@ xmlSecTransformCtxBinaryExecute(xmlSecTransformCtxPtr ctx,
     ret = xmlSecTransformPushBin(ctx->first, data, dataSize, 1, ctx);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecTransformPushBin", NULL,
-                             "dataSize=%d", dataSize);
+                             "dataSize=" XMLSEC_SIZE_FMT,  dataSize);
         return(-1);
     }
 
@@ -1068,10 +1076,10 @@ xmlSecTransformCtxExecute(xmlSecTransformCtxPtr ctx, xmlDocPtr doc) {
     xmlSecAssert2(ctx->status == xmlSecTransformStatusNone, -1);
     xmlSecAssert2(doc != NULL, -1);
 
-    if((ctx->uri == NULL) || (xmlStrlen(ctx->uri) == 0)) {
+    if((ctx->uri == NULL) || (xmlSecStrlen(ctx->uri) == 0)) {
         xmlSecNodeSetPtr nodes;
 
-        if((ctx->xptrExpr != NULL) && (xmlStrlen(ctx->xptrExpr) > 0)){
+        if((ctx->xptrExpr != NULL) && (xmlSecStrlen(ctx->xptrExpr) > 0)){
             /* our xpointer transform takes care of providing correct nodes set */
             nodes = xmlSecNodeSetCreate(doc, NULL, xmlSecNodeSetNormal);
             if(nodes == NULL) {
@@ -1120,7 +1128,8 @@ xmlSecTransformCtxDebugDump(xmlSecTransformCtxPtr ctx, FILE* output) {
     xmlSecAssert(ctx != NULL);
     xmlSecAssert(output != NULL);
 
-    fprintf(output, "== TRANSFORMS CTX (status=%d)\n", ctx->status);
+    fprintf(output, "== TRANSFORMS CTX (status=" XMLSEC_ENUM_FMT ")\n",
+        XMLSEC_ENUM_CAST(ctx->status));
 
     fprintf(output, "== flags: 0x%08x\n", ctx->flags);
     fprintf(output, "== flags2: 0x%08x\n", ctx->flags2);
@@ -1154,7 +1163,8 @@ xmlSecTransformCtxDebugXmlDump(xmlSecTransformCtxPtr ctx, FILE* output) {
     xmlSecAssert(ctx != NULL);
     xmlSecAssert(output != NULL);
 
-    fprintf(output, "<TransformCtx status=\"%d\">\n", ctx->status);
+    fprintf(output, "<TransformCtx status=\"" XMLSEC_ENUM_FMT "\">\n",
+        XMLSEC_ENUM_CAST(ctx->status));
 
     fprintf(output, "<Flags>%08x</Flags>\n", ctx->flags);
     fprintf(output, "<Flags2>%08x</Flags2>\n", ctx->flags2);
@@ -1862,9 +1872,7 @@ xmlSecTransformDefaultGetDataType(xmlSecTransformPtr transform, xmlSecTransformM
             }
             break;
         default:
-            xmlSecInvalidIntegerDataError("mode", mode,
-                    "xmlSecTransformModePush,xmlSecTransformModePop",
-                    xmlSecTransformGetName(transform));
+            xmlSecUnsupportedEnumValueError("mode", mode, xmlSecTransformGetName(transform));
             return(xmlSecTransformDataTypeUnknown);
     }
 
@@ -1910,9 +1918,8 @@ xmlSecTransformDefaultPushBin(xmlSecTransformPtr transform, const xmlSecByte* da
 
             ret = xmlSecBufferAppend(&(transform->inBuf), data, chunkSize);
             if(ret < 0) {
-                xmlSecInternalError2("xmlSecBufferAppend",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", chunkSize);
+                xmlSecInternalError2("xmlSecBufferAppend", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, chunkSize);
                 return(-1);
             }
 
@@ -1924,9 +1931,8 @@ xmlSecTransformDefaultPushBin(xmlSecTransformPtr transform, const xmlSecByte* da
         finalData = (((dataSize == 0) && (final != 0)) ? 1 : 0);
         ret = xmlSecTransformExecute(transform, finalData, transformCtx);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecTransformExecute",
-                                 xmlSecTransformGetName(transform),
-                                 "final=%d", final);
+            xmlSecInternalError2("xmlSecTransformExecute", xmlSecTransformGetName(transform),
+                "final=%d", final);
             return(-1);
         }
 
@@ -1949,9 +1955,8 @@ xmlSecTransformDefaultPushBin(xmlSecTransformPtr transform, const xmlSecByte* da
                             finalData,
                             transformCtx);
             if(ret < 0) {
-                xmlSecInternalError3("xmlSecTransformPushBin",
-                                     xmlSecTransformGetName(transform->next),
-                                     "final=%d;outSize=%d", final, outSize);
+                xmlSecInternalError3("xmlSecTransformPushBin", xmlSecTransformGetName(transform->next),
+                    "final=%d;outSize=" XMLSEC_SIZE_FMT, final, outSize);
                 return(-1);
             }
         }
@@ -1960,9 +1965,8 @@ xmlSecTransformDefaultPushBin(xmlSecTransformPtr transform, const xmlSecByte* da
         if(outSize > 0) {
             ret = xmlSecBufferRemoveHead(&(transform->outBuf), outSize);
             if(ret < 0) {
-                xmlSecInternalError2("xmlSecBufferRemoveHead",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", outSize);
+                xmlSecInternalError2("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, outSize);
                 return(-1);
             }
         }
@@ -2009,9 +2013,8 @@ xmlSecTransformDefaultPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
             /* ensure that we have space for at least one data chunk */
             ret = xmlSecBufferSetMaxSize(&(transform->inBuf), inSize + chunkSize);
             if(ret < 0) {
-                xmlSecInternalError2("xmlSecBufferSetMaxSize",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", inSize + chunkSize);
+                xmlSecInternalError2("xmlSecBufferSetMaxSize", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, (inSize + chunkSize));
                 return(-1);
             }
 
@@ -2020,8 +2023,7 @@ xmlSecTransformDefaultPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
                             xmlSecBufferGetData(&(transform->inBuf)) + inSize,
                             chunkSize, &chunkSize, transformCtx);
             if(ret < 0) {
-                xmlSecInternalError("xmlSecTransformPopBin",
-                                    xmlSecTransformGetName(transform->prev));
+                xmlSecInternalError("xmlSecTransformPopBin", xmlSecTransformGetName(transform->prev));
                 return(-1);
             }
 
@@ -2029,9 +2031,8 @@ xmlSecTransformDefaultPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
             if(chunkSize > 0) {
                 ret = xmlSecBufferSetSize(&(transform->inBuf), inSize + chunkSize);
                 if(ret < 0) {
-                    xmlSecInternalError2("xmlSecBufferSetSize",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", inSize + chunkSize);
+                    xmlSecInternalError2("xmlSecBufferSetSize", xmlSecTransformGetName(transform),
+                        "size=" XMLSEC_SIZE_FMT, (inSize + chunkSize));
                     return(-1);
                 }
                 final = 0; /* the previous transform returned some data..*/
@@ -2070,7 +2071,7 @@ xmlSecTransformDefaultPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
         if(ret < 0) {
             xmlSecInternalError2("xmlSecBufferRemoveHead",
                                  xmlSecTransformGetName(transform),
-                                 "size=%d", outSize);
+                                 "size=" XMLSEC_SIZE_FMT, outSize);
             return(-1);
         }
     }
@@ -2368,10 +2369,10 @@ static xmlSecTransformIOBufferPtr xmlSecTransformIOBufferCreate (xmlSecTransform
 static void     xmlSecTransformIOBufferDestroy                  (xmlSecTransformIOBufferPtr buffer);
 static int      xmlSecTransformIOBufferRead                     (xmlSecTransformIOBufferPtr buffer,
                                                                  xmlSecByte *buf,
-                                                                 xmlSecSize size);
+                                                                 int len);
 static int      xmlSecTransformIOBufferWrite                    (xmlSecTransformIOBufferPtr buffer,
                                                                  const xmlSecByte *buf,
-                                                                 xmlSecSize size);
+                                                                 int len);
 static int      xmlSecTransformIOBufferClose                    (xmlSecTransformIOBufferPtr buffer);
 
 
@@ -2397,8 +2398,8 @@ xmlSecTransformCreateOutputBuffer(xmlSecTransformPtr transform, xmlSecTransformC
     type = xmlSecTransformDefaultGetDataType(transform, xmlSecTransformModePush, transformCtx);
     if((type & xmlSecTransformDataTypeBin) == 0) {
         xmlSecInvalidTransfromError2(transform,
-                            "push binary data not supported, type=\"%d\"",
-                            (int)type);
+            "push binary data not supported, type=\"" XMLSEC_ENUM_FMT "\"",
+            XMLSEC_ENUM_CAST(type));
         return(NULL);
     }
 
@@ -2444,8 +2445,8 @@ xmlSecTransformCreateInputBuffer(xmlSecTransformPtr transform, xmlSecTransformCt
     type = xmlSecTransformDefaultGetDataType(transform, xmlSecTransformModePop, transformCtx);
     if((type & xmlSecTransformDataTypeBin) == 0) {
         xmlSecInvalidTransfromError2(transform,
-                            "pop binary data not supported, type=\"%d\"",
-                            (int)type);
+            "pop binary data not supported, type=\"" XMLSEC_ENUM_FMT "\"",
+            XMLSEC_ENUM_CAST(type));
         return(NULL);
     }
 
@@ -2501,8 +2502,10 @@ xmlSecTransformIOBufferDestroy(xmlSecTransformIOBufferPtr buffer) {
 
 static int
 xmlSecTransformIOBufferRead(xmlSecTransformIOBufferPtr buffer,
-                            xmlSecByte *buf, xmlSecSize size) {
+                            xmlSecByte *buf, int len) {
+    xmlSecSize size;
     int ret;
+    int res;
 
     xmlSecAssert2(buffer != NULL, -1);
     xmlSecAssert2(buffer->mode == xmlSecTransformIOBufferModeRead, -1);
@@ -2510,19 +2513,23 @@ xmlSecTransformIOBufferRead(xmlSecTransformIOBufferPtr buffer,
     xmlSecAssert2(buffer->transformCtx != NULL, -1);
     xmlSecAssert2(buf != NULL, -1);
 
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(len, size, return(-1), xmlSecTransformGetName(buffer->transform));
     ret = xmlSecTransformPopBin(buffer->transform, buf, size, &size, buffer->transformCtx);
     if(ret < 0) {
         xmlSecInternalError("xmlSecTransformPopBin",
                             xmlSecTransformGetName(buffer->transform));
         return(-1);
     }
-    return(size);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(size, res, return(-1), NULL);
+    return(res);
 }
 
 static int
 xmlSecTransformIOBufferWrite(xmlSecTransformIOBufferPtr buffer,
-                            const xmlSecByte *buf, xmlSecSize size) {
+                            const xmlSecByte *buf, int len) {
+    xmlSecSize size;
     int ret;
+    int res;
 
     xmlSecAssert2(buffer != NULL, -1);
     xmlSecAssert2(buffer->mode == xmlSecTransformIOBufferModeWrite, -1);
@@ -2530,13 +2537,15 @@ xmlSecTransformIOBufferWrite(xmlSecTransformIOBufferPtr buffer,
     xmlSecAssert2(buffer->transformCtx != NULL, -1);
     xmlSecAssert2(buf != NULL, -1);
 
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(len, size, return(-1), xmlSecTransformGetName(buffer->transform));
     ret = xmlSecTransformPushBin(buffer->transform, buf, size, 0, buffer->transformCtx);
     if(ret < 0) {
         xmlSecInternalError("xmlSecTransformPushBin",
                             xmlSecTransformGetName(buffer->transform));
         return(-1);
     }
-    return(size);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(size, res, return(-1), NULL);
+    return(res);
 }
 
 static int
@@ -2560,3 +2569,156 @@ xmlSecTransformIOBufferClose(xmlSecTransformIOBufferPtr buffer) {
     xmlSecTransformIOBufferDestroy(buffer);
     return(0);
 }
+
+
+/*********************************************************************
+ *
+ * Helper transform functions
+ *
+ ********************************************************************/
+
+#ifndef XMLSEC_NO_HMAC
+
+/* min output for hmac transform in bits */
+static xmlSecSize g_xmlsec_transform_hmac_min_output_bits_size = 80;
+
+/**
+ * xmlSecTransformHmacGetMinOutputBitsSize:
+ *
+ * Gets the minimum size in bits for HMAC output.
+ *
+ * Returns: the min HMAC output size in bits.
+ */
+xmlSecSize
+xmlSecTransformHmacGetMinOutputBitsSize(void) {
+    return(g_xmlsec_transform_hmac_min_output_bits_size);
+}
+
+/**
+ * xmlSecTransformHmacSetMinOutputBitsSize:
+ * @val: the new min hmac output size in bits.
+ *
+ * Sets the min HMAC output size in bits. Low value for min output size
+ * might create a security vulnerability and is not recommended.
+ */
+void xmlSecTransformHmacSetMinOutputBitsSize(xmlSecSize val) {
+    g_xmlsec_transform_hmac_min_output_bits_size = val;
+}
+
+/**
+ * xmlSecTransformHmacReadOutputDigestSize:
+ *
+ * HMAC (http://www.w3.org/TR/xmldsig-core/#sec-HMAC):
+ *
+ * The HMAC algorithm (RFC2104 [HMAC]) takes the truncation length in bits
+ * as a parameter; if the parameter is not specified then all the bits of the
+ * hash are output. An example of an HMAC SignatureMethod element:
+ * <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#hmac-sha1">
+ *   <HMACOutputLength>128</HMACOutputLength>
+ * </SignatureMethod>
+ *
+ * Schema Definition:
+ *
+ * <simpleType name="HMACOutputLengthType">
+ *   <restriction base="integer"/>
+ * </simpleType>
+ *
+ * DTD:
+ *
+ * <!ELEMENT HMACOutputLength (#PCDATA)>
+ */
+int
+xmlSecTransformHmacReadOutputBitsSize(xmlNodePtr node, xmlSecSize defaultSize, xmlSecSize* res) {
+    xmlNodePtr cur;
+
+    xmlSecAssert2(node != NULL, -1);
+    xmlSecAssert2(res != NULL, -1);
+
+    cur = xmlSecGetNextElementNode(node->children);
+    if ((cur != NULL) && xmlSecCheckNodeName(cur, xmlSecNodeHMACOutputLength, xmlSecDSigNs)) {
+        xmlSecSize minSize;
+        int ret;
+
+        ret = xmlSecGetNodeContentAsSize(cur, defaultSize, res);
+        if (ret != 0) {
+            xmlSecInternalError("xmlSecGetNodeContentAsSize(HMACOutputLength)", NULL);
+            return(-1);
+        }
+
+        /* Ensure that HMAC length is greater than min specified.
+           Otherwise, an attacker can set this length to 0 or very
+           small value
+        */
+        minSize = xmlSecTransformHmacGetMinOutputBitsSize();
+        if ((*res) < minSize) {
+            xmlSecInvalidNodeContentError3(cur, NULL,
+                "HMAC output length=" XMLSEC_SIZE_FMT "; HMAC min output length=" XMLSEC_SIZE_FMT,
+                (*res), minSize);
+            return(-1);
+        }
+
+        cur = xmlSecGetNextElementNode(cur->next);
+    }
+
+    /* no other nodes expected */
+    if (cur != NULL) {
+        xmlSecUnexpectedNodeError(cur, NULL);
+        return(-1);
+    }
+    return(0);
+}
+
+#endif /* XMLSEC_NO_HMAC */
+
+#ifndef XMLSEC_NO_RSA
+
+int
+xmlSecTransformRsaOaepReadParams(xmlNodePtr node, xmlSecBufferPtr params, xmlChar** algorithm) {
+    xmlChar* alg = NULL;
+    xmlNodePtr cur;
+    int ret;
+    int res = -1;
+
+    xmlSecAssert2(node != NULL, -1);
+    xmlSecAssert2(params != NULL, -1);
+    xmlSecAssert2(algorithm != NULL, -1);
+
+    cur = xmlSecGetNextElementNode(node->children);
+    while (cur != NULL) {
+        if (xmlSecCheckNodeName(cur, xmlSecNodeRsaOAEPparams, xmlSecEncNs)) {
+            ret = xmlSecBufferBase64NodeContentRead(params, cur);
+            if (ret < 0) {
+                xmlSecInternalError("xmlSecBufferBase64NodeContentRead", NULL);
+                goto done;
+            }
+        } else if (xmlSecCheckNodeName(cur, xmlSecNodeDigestMethod, xmlSecDSigNs)) {
+            /* Algorithm attribute is required */
+            alg = xmlGetProp(cur, xmlSecAttrAlgorithm);
+            if (alg == NULL) {
+                xmlSecInvalidNodeAttributeError(cur, xmlSecAttrAlgorithm, NULL, "empty");
+                goto done;
+            }
+        } else {
+            /* node not recognized */
+            xmlSecUnexpectedNodeError(cur, NULL);
+            goto done;
+        }
+
+        /* next node */
+        cur = xmlSecGetNextElementNode(cur->next);
+    }
+
+    /* success */
+    (*algorithm) = alg;
+    alg = NULL;
+    res = 0;
+
+done:
+    /* cleanup */
+    if (alg != NULL) {
+        xmlFree(alg);
+    }
+    return(res);
+}
+
+#endif /* XMLSEC_NO_RSA */

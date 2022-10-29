@@ -1,0 +1,19 @@
+diff --git a/tests/testrun.sh b/tests/testrun.sh
+index fe0334c..fb68e3d 100755
+--- a/tests/testrun.sh
++++ b/tests/testrun.sh
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ 
+ OS_ARCH=`uname -o`
+ OS_KERNEL=`uname -s`
+@@ -472,7 +472,7 @@ execEncTest() {
+ rm -rf $tmpfile $tmpfile.2 tmpfile.3
+ 
+ # run tests
+-source "$testfile"
++. "$testfile"
+ 
+ # print results
+ echo "--- TOTAL OK: $count_success; TOTAL FAILED: $count_fail; TOTAL SKIPPED: $count_skip" >> $logfile

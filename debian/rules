@@ -5,17 +5,31 @@ export OFFLINE=1
 %:
 	dh $@
 
-override_dh_clean:
-	dh_clean config.log config.cache config.status
+override_dh_auto_clean:
+	dh_auto_clean
 	if [ -d docs.bak ]; then rm -rf docs; mv docs.bak docs; fi
+	rm -f man/xmlsec1-config.1 man/xmlsec1.1
+	rm -f config.log config.cache config.status
 
 override_dh_auto_configure:
 	if [ ! -d docs.bak ]; then cp -ra docs docs.bak; fi
 	dh_auto_configure -- \
+		--enable-manpages-build \
+		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
+		--disable-crypto-dl \
+		--disable-apps-crypto-dl \
+		--enable-soap \
+		--enable-openssl3-engines
+
+override_dh_auto_build-indep:
+	dh_auto_configure -- \
+		--enable-manpages-build \
+		--enable-docs --enable-docs-build \
 		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
 		--disable-crypto-dl \
 		--disable-apps-crypto-dl \
 		--enable-soap
+	dh_auto_build --no-parallel
 
 override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
@@ -35,7 +49,7 @@ override_dh_installexamples:
 	dh_installexamples examples/*
 
 override_dh_installdocs:
-	dh_installdocs -X.sgml --all README debian/README.Debian
+	dh_installdocs -X.sgml --all README.md debian/README.Debian
 
 override_dh_compress:
 	dh_compress -Xexamples/

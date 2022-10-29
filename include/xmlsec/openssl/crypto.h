@@ -4,17 +4,19 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_OPENSSL_CRYPTO_H__
 #define __XMLSEC_OPENSSL_CRYPTO_H__
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/dl.h>
 
 #include <openssl/err.h>
+#include <openssl/opensslv.h>
 #ifndef OPENSSL_IS_BORINGSSL
 #include <openssl/opensslconf.h>
 #endif /* OPENSSL_IS_BORINGSSL */
@@ -38,13 +40,47 @@
 extern "C" {
 #endif /* __cplusplus */
 
-XMLSEC_CRYPTO_EXPORT xmlSecCryptoDLFunctionsPtr xmlSecCryptoGetFunctions_openssl(void);
+/********************************************************************
+ *
+ * What version of the openssl API do we have? (also see configure.ac)
+ *
+ *******************************************************************/
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
+/* LibreSSL decided to take over OpenSSL version 2.0.0, likely will create
+ * issues down the road... */
+#define XMLSEC_OPENSSL_API_100      1
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma message("Support for LibreSSL before version 2.7.0 is deprecated and will be removed in the future versions of XMLSec library")
+#endif /* defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__) */
+#elif defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x20700000L
+/* LibreSSL 2.7 implements (most of) OpenSSL 1.1 API */
+#define XMLSEC_OPENSSL_API_110      1
+#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
+#define XMLSEC_OPENSSL_API_300      1
+#elif OPENSSL_VERSION_NUMBER >= 0x10101000L
+#define XMLSEC_OPENSSL_API_111      1
+#define XMLSEC_OPENSSL_API_110      1
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
+#define XMLSEC_OPENSSL_API_110      1
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma message("Support for OpenSSL before version 1.1.1 is deprecated and will be removed in the future versions of XMLSec library")
+#endif /* defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__) */
+#elif OPENSSL_VERSION_NUMBER >= 0x10000000L
+#define XMLSEC_OPENSSL_API_100      1
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma message("Support for OpenSSL before version 1.1.1 is deprecated and will be removed in the future versions of XMLSec library")
+#endif /* defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__) */
+#else  /* OPENSSL_VERSION_NUMBER */
+#error "This version of OpenSSL library is not supported"
+#endif /* OPENSSL_VERSION_NUMBER */
 
 /********************************************************************
  *
- * Init shutdown
+ * Common functions
  *
  ********************************************************************/
+XMLSEC_CRYPTO_EXPORT xmlSecCryptoDLFunctionsPtr xmlSecCryptoGetFunctions_openssl(void);
+
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLInit               (void);
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLShutdown           (void);
 
@@ -55,26 +91,20 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLGenerateRandom     (xmlSecB
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLSetDefaultTrustedCertsFolder(const xmlChar* path);
 XMLSEC_CRYPTO_EXPORT const xmlChar*     xmlSecOpenSSLGetDefaultTrustedCertsFolder(void);
 
+#ifdef XMLSEC_OPENSSL_API_300
+XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLSetLibCtx(OSSL_LIB_CTX* libctx);
+XMLSEC_CRYPTO_EXPORT OSSL_LIB_CTX*      xmlSecOpenSSLGetLibCtx(void);
+#endif /* XMLSEC_OPENSSL_API_300 */
+
 /********************************************************************
  *
- * What version of the openssl API do we have? (also see configure.ac)
+ * BIO helpers
  *
- *******************************************************************/
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
-/* LibreSSL decided to take over OpenSSL version 2.0.0, likely will create
- * issues down the road... */
-#define XMLSEC_OPENSSL_API_100      1
-#elif defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x20700000L
-/* LibreSSL 2.7 implements (most of) OpenSSL 1.1 API */
-#define XMLSEC_OPENSSL_API_110      1
-#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
-#define XMLSEC_OPENSSL_API_110      1
-#elif OPENSSL_VERSION_NUMBER >= 0x10000000L
-#define XMLSEC_OPENSSL_API_100      1
-#else  /* OPENSSL_VERSION_NUMBER */
-#error "This version of OpenSSL library is not supported"
-#endif /* OPENSSL_VERSION_NUMBER */
-
+ ********************************************************************/
+XMLSEC_CRYPTO_EXPORT BIO*               xmlSecOpenSSLCreateMemBio      (void);
+XMLSEC_CRYPTO_EXPORT BIO*               xmlSecOpenSSLCreateMemBufBio   (const xmlSecByte* buf,
+                                                                        xmlSecSize bufSize);
+XMLSEC_CRYPTO_EXPORT BIO*               xmlSecOpenSSLCreateReadFileBio (const char* path);
 /********************************************************************
  *
  * What is supported by the openssl?
@@ -134,6 +164,7 @@ XMLSEC_CRYPTO_EXPORT const xmlChar*     xmlSecOpenSSLGetDefaultTrustedCertsFolde
 #if defined(OPENSSL_NO_X509) || defined(OPENSSL_NO_X509_VERIFY)
 #define XMLSEC_NO_X509      1
 #endif /* defined(OPENSSL_NO_X509) || defined(OPENSSL_NO_X509_VERIFY) */
+
 
 /********************************************************************
  *
@@ -288,12 +319,15 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformKWDes3GetKlass(void
 #define xmlSecOpenSSLKeyDataDsaId \
         xmlSecOpenSSLKeyDataDsaGetKlass()
 XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecOpenSSLKeyDataDsaGetKlass (void);
-XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataDsaAdoptDsa (xmlSecKeyDataPtr data,
-                                                                         DSA* dsa);
-XMLSEC_CRYPTO_EXPORT DSA*               xmlSecOpenSSLKeyDataDsaGetDsa   (xmlSecKeyDataPtr data);
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataDsaAdoptEvp (xmlSecKeyDataPtr data,
                                                                          EVP_PKEY* pKey);
 XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataDsaGetEvp   (xmlSecKeyDataPtr data);
+
+
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int xmlSecOpenSSLKeyDataDsaAdoptDsa (xmlSecKeyDataPtr data,
+                                                                         DSA* dsa);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT DSA* xmlSecOpenSSLKeyDataDsaGetDsa   (xmlSecKeyDataPtr data);
+
 
 #ifndef XMLSEC_NO_SHA1
 /**
@@ -334,12 +368,14 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformDsaSha256GetKlass(v
 #define xmlSecOpenSSLKeyDataEcdsaId \
         xmlSecOpenSSLKeyDataEcdsaGetKlass()
 XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecOpenSSLKeyDataEcdsaGetKlass   (void);
-XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataEcdsaAdoptEcdsa (xmlSecKeyDataPtr data,
-                                                                             EC_KEY* ecdsa);
-XMLSEC_CRYPTO_EXPORT EC_KEY*            xmlSecOpenSSLKeyDataEcdsaGetEcdsa   (xmlSecKeyDataPtr data);
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataEcdsaAdoptEvp   (xmlSecKeyDataPtr data,
                                                                              EVP_PKEY* pKey);
 XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataEcdsaGetEvp     (xmlSecKeyDataPtr data);
+
+
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int xmlSecOpenSSLKeyDataEcdsaAdoptEcdsa (xmlSecKeyDataPtr data,
+                                                                             EC_KEY* ecdsa);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT EC_KEY* xmlSecOpenSSLKeyDataEcdsaGetEcdsa   (xmlSecKeyDataPtr data);
 
 #ifndef XMLSEC_NO_SHA1
 /**
@@ -511,8 +547,8 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformGostR3411_2012_512G
  *******************************************************************/
 #ifndef XMLSEC_NO_HMAC
 
-XMLSEC_CRYPTO_EXPORT int               xmlSecOpenSSLHmacGetMinOutputLength(void);
-XMLSEC_CRYPTO_EXPORT void              xmlSecOpenSSLHmacSetMinOutputLength(int min_length);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int  xmlSecOpenSSLHmacGetMinOutputLength(void);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT void xmlSecOpenSSLHmacSetMinOutputLength(int min_length);
 
 /**
  * xmlSecOpenSSLKeyDataHmacId:
@@ -653,12 +689,14 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformRipemd160GetKlass(v
 #define xmlSecOpenSSLKeyDataRsaId \
         xmlSecOpenSSLKeyDataRsaGetKlass()
 XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecOpenSSLKeyDataRsaGetKlass (void);
-XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataRsaAdoptRsa (xmlSecKeyDataPtr data,
-                                                                         RSA* rsa);
-XMLSEC_CRYPTO_EXPORT RSA*               xmlSecOpenSSLKeyDataRsaGetRsa   (xmlSecKeyDataPtr data);
 XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataRsaAdoptEvp (xmlSecKeyDataPtr data,
                                                                          EVP_PKEY* pKey);
 XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataRsaGetEvp   (xmlSecKeyDataPtr data);
+
+
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int  xmlSecOpenSSLKeyDataRsaAdoptRsa (xmlSecKeyDataPtr data,
+                                                                         RSA* rsa);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT RSA* xmlSecOpenSSLKeyDataRsaGetRsa   (xmlSecKeyDataPtr data);
 
 #ifndef XMLSEC_NO_MD5
 /**
@@ -839,7 +877,6 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSha384GetKlass(void
         xmlSecOpenSSLTransformSha512GetKlass()
 XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSha512GetKlass(void);
 #endif /* XMLSEC_NO_SHA512 */
-
 
 XMLSEC_CRYPTO_EXPORT void       xmlSecOpenSSLErrorsDefaultCallback      (const char* file,
                                                                          int line,

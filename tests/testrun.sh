@@ -12,8 +12,9 @@ topfolder="$3"
 xmlsec_app="$4"
 file_format="$5"
 timestamp=`date +%Y%m%d_%H%M%S`
+exit_code=0
 
-if [ "z$OS_ARCH" = "zCygwin" ] ; then
+if test "z$OS_ARCH" = "zCygwin" || test "z$OS_ARCH" = "zMsys" ; then
     topfolder=`cygpath -wa "$topfolder"`
     xmlsec_app=`cygpath -a "$xmlsec_app"`
 fi
@@ -25,7 +26,7 @@ if [ "z$TMPFOLDER" = "z" ] ; then
     TMPFOLDER=/tmp
 fi
 testname=`basename $testfile`
-if [ "z$OS_ARCH" = "zCygwin" ] ; then
+if test "z$OS_ARCH" = "zCygwin" || test "z$OS_ARCH" = "zMsys" ; then
     tmpfile=`cygpath -wa $TMPFOLDER/$testname.$timestamp-$$.tmp`
     logfile=`cygpath -wa $TMPFOLDER/$testname.$timestamp-$$.log`
     curlogfile=`cygpath -wa $TMPFOLDER/$testname.$timestamp-$$.cur.log`
@@ -36,15 +37,25 @@ else
     curlogfile=$TMPFOLDER/$testname.$timestamp-$$.cur.log
     failedlogfile=$TMPFOLDER/$testname.$timestamp-$$.failed.log
 fi
-nssdbfolder=$topfolder/nssdb
 
 #
 # Valgrind
 #
-valgrind_suppression="--suppressions=$topfolder/openssl.supp --suppressions=$topfolder/nss.supp"
-valgrind_options="--leak-check=yes --show-reachable=yes --num-callers=32 -v"
-if [ -n "$DEBUG_MEMORY" ] ; then 
-    export VALGRIND="valgrind $valgrind_options"
+if [ "z$crypto" = "zopenssl" ] ; then
+    valgrind_suppression="--suppressions=$topfolder/valgrind-openssl.supp"
+elif [ "z$crypto" = "znss" ] ; then
+    valgrind_suppression="--suppressions=$topfolder/valgrind-nss.supp"
+elif [ "z$crypto" = "zgcrypt" ] ; then
+    valgrind_suppression="--suppressions=$topfolder/valgrind-gcrypt.supp"
+elif [ "z$crypto" = "zgnutls" ] ; then
+    valgrind_suppression="--suppressions=$topfolder/valgrind-gcrypt.supp"
+else
+    valgrind_suppression=""
+fi
+
+valgrind_options="--leak-check=full --show-reachable=yes --num-callers=32 --track-origins=yes -s"
+if [ -n "$DEBUG_MEMORY" ] ; then
+    export VALGRIND="valgrind $valgrind_options $valgrind_suppression"
     export REPEAT=3
     xmlsec_params="$xmlsec_params --repeat $REPEAT"
 fi
@@ -60,6 +71,20 @@ elif [ "z$crypto" != "z" ] ; then
     xmlsec_params="$xmlsec_params --crypto $crypto"
 fi
 xmlsec_params="$xmlsec_params --crypto-config $crypto_config"
+
+#
+# Setup extra vars
+#
+extra_vars=
+if [ "z$crypto" = "zopenssl" -a "z$XMLSEC_OPENSSL_TEST_CONFIG" != "z" ] ; then
+    if test "z$OS_ARCH" = "zCygwin" || test "z$OS_ARCH" = "zMsys" ; then
+        opensslconf=`cygpath -wa $topfolder/$XMLSEC_OPENSSL_TEST_CONFIG`
+    else
+        opensslconf=$topfolder/$XMLSEC_OPENSSL_TEST_CONFIG
+    fi
+    extra_vars="$extra_vars OPENSSL_CONF=$opensslconf"
+    export OPENSSL_CONF="$opensslconf"
+fi
 
 #
 # Setup keys config
@@ -88,7 +113,7 @@ fi
 
 # On Windows, one needs to specify Crypto Service Provider (CSP)
 # in the pkcs12 file to ensure it is loaded correctly to be used
-# with SHA2 algorithms. Worse, the CSP is different for XP and older 
+# with SHA2 algorithms. Worse, the CSP is different for XP and older
 # versions
 if test "z$OS_ARCH" = "zCygwin" || test "z$OS_ARCH" = "zMsys" ; then
     # Samples:
@@ -107,7 +132,7 @@ fi
 #
 # Misc
 #
-if [ -n "$PERF_TEST" ] ; then 
+if [ -n "$PERF_TEST" ] ; then
     xmlsec_params="$xmlsec_params --repeat $PERF_TEST"
 fi
 
@@ -133,7 +158,7 @@ printRes() {
     actual_res="$2"
 
     # convert status to string
-    if [ $actual_res = 0 ]; then
+    if [ $actual_res -eq 0 ]; then
         actual_res_str=$res_success
     else
         actual_res_str=$res_fail
@@ -160,7 +185,7 @@ printRes() {
 
 printCheckStatus() {
     check_res="$1"
-    if [ $check_res = 0 ]; then
+    if [ $check_res -eq 0 ]; then
         echo "   OK"
     else
 	count_skip=`expr $count_skip + 1`
@@ -193,7 +218,7 @@ execKeysTest() {
         cd $old_pwd
         return
     fi
-    
+
     # starting test
     echo "Test: $alg_name ($expected_res)"
     echo "Test: $alg_name ($expected_res)" > $curlogfile
@@ -201,11 +226,11 @@ execKeysTest() {
     # check key data
     if [ -n "$req_key_data" ] ; then
         printf "    Checking required key data                            "
-        echo "$xmlsec_app check-key-data $xmlsec_params $req_key_data" >> $curlogfile
+        echo "$extra_vars $xmlsec_app check-key-data $xmlsec_params $req_key_data" >> $curlogfile
         $xmlsec_app check-key-data $xmlsec_params $req_key_data >> $curlogfile 2>> $curlogfile
         printCheckStatus $?
         res=$?
-        if [ $res != 0 ]; then
+        if [ $res -ne 0 ]; then
 	    cat $curlogfile >> $logfile
 	    cd $old_pwd
             return
@@ -218,16 +243,16 @@ execKeysTest() {
     if [ -f $keysfile ] ; then
         params="$params --keys-file $keysfile"
     fi
-    echo "$VALGRIND $xmlsec_app keys $params $xmlsec_params $keysfile" >>  $curlogfile 
+    echo "$extra_vars $VALGRIND $xmlsec_app keys $params $xmlsec_params $keysfile" >>  $curlogfile
     $VALGRIND $xmlsec_app keys $params $xmlsec_params $keysfile >> $curlogfile 2>> $curlogfile
     printRes $expected_res $?
-    if [ $? != 0 ]; then
+    if [ $? -ne 0 ]; then
         failures=`expr $failures + 1`
     fi
 
     # save logs
     cat $curlogfile >> $logfile
-    if [ $failures != 0 ] ; then
+    if [ $failures -ne 0 ] ; then
         cat $curlogfile >> $failedlogfile
     fi
 
@@ -280,11 +305,11 @@ execDSigTest() {
     # check transforms
     if [ -n "$req_transforms" ] ; then
         printf "    Checking required transforms                         "
-        echo "$xmlsec_app check-transforms $xmlsec_params $req_transforms" >> $curlogfile
+        echo "$extra_vars $xmlsec_app check-transforms $xmlsec_params $req_transforms" >> $curlogfile
         $xmlsec_app check-transforms $xmlsec_params $req_transforms >> $curlogfile 2>> $curlogfile
         printCheckStatus $?
         res=$?
-        if [ $res != 0 ]; then
+        if [ $res -ne 0 ]; then
             cat $curlogfile >> $logfile
 	    cd $old_pwd
             return
@@ -294,11 +319,11 @@ execDSigTest() {
     # check key data
     if [ -n "$req_key_data" ] ; then
         printf "    Checking required key data                           "
-        echo "$xmlsec_app check-key-data $xmlsec_params $req_key_data" >> $curlogfile
+        echo "$extra_vars $xmlsec_app check-key-data $xmlsec_params $req_key_data" >> $curlogfile
         $xmlsec_app check-key-data $xmlsec_params $req_key_data >> $curlogfile 2>> $curlogfile
         printCheckStatus $?
         res=$?
-        if [ $res != 0 ]; then
+        if [ $res -ne 0 ]; then
             cat $curlogfile >> $logfile
 	    cd $old_pwd
             return
@@ -308,37 +333,37 @@ execDSigTest() {
     # run tests
     if [ -n "$params1" ] ; then
         printf "    Verify existing signature                            "
-        echo "$VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params1 $full_file.xml" >> $curlogfile
+        echo "$extra_vars $VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params1 $full_file.xml" >> $curlogfile
         $VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params1 $full_file.xml >> $curlogfile 2>> $curlogfile
         printRes $expected_res $?
-        if [ $? != 0 ]; then
+        if [ $? -ne 0 ]; then
             failures=`expr $failures + 1`
         fi
     fi
 
     if [ -n "$params2" -a -z "$PERF_TEST" ] ; then
         printf "    Create new signature                                 "
-        echo "$VALGRIND $xmlsec_app sign $xmlsec_params $params2 --output $tmpfile $full_file.tmpl" >> $curlogfile
+        echo "$extra_vars $VALGRIND $xmlsec_app sign $xmlsec_params $params2 --output $tmpfile $full_file.tmpl" >> $curlogfile
         $VALGRIND $xmlsec_app sign $xmlsec_params $params2 --output $tmpfile $full_file.tmpl >> $curlogfile 2>> $curlogfile
         printRes $res_success $?
-        if [ $? != 0 ]; then
+        if [ $? -ne 0 ]; then
             failures=`expr $failures + 1`
         fi
     fi
 
     if [ -n "$params3" -a -z "$PERF_TEST" ] ; then
         printf "    Verify new signature                                 "
-        echo "$VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params3 $tmpfile" >> $curlogfile
+        echo "$extra_vars $VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params3 $tmpfile" >> $curlogfile
         $VALGRIND $xmlsec_app verify --X509-skip-strict-checks $xmlsec_params $params3 $tmpfile >> $curlogfile 2>> $curlogfile
         printRes $res_success $?
-        if [ $? != 0 ]; then
+        if [ $? -ne  0 ]; then
             failures=`expr $failures + 1`
         fi
     fi
 
     # save logs
     cat $curlogfile >> $logfile
-    if [ $failures != 0 ] ; then
+    if [ $failures -ne 0 ] ; then
         cat $curlogfile >> $failedlogfile
     fi
 
@@ -391,11 +416,11 @@ execEncTest() {
     # check transforms
     if [ -n "$req_transforms" ] ; then
         printf "    Checking required transforms                         "
-        echo "$xmlsec_app check-transforms $xmlsec_params $req_transforms" >> $curlogfile
+        echo "$extra_vars $xmlsec_app check-transforms $xmlsec_params $req_transforms" >> $curlogfile
         $xmlsec_app check-transforms $xmlsec_params $req_transforms >> $curlogfile 2>> $curlogfile
         printCheckStatus $?
         res=$?
-        if [ $res != 0 ]; then
+        if [ $res -ne 0 ]; then
 	    cat $curlogfile >> $logfile
 	    cd $old_pwd
             return
@@ -406,11 +431,11 @@ execEncTest() {
     if [ -n "$params1" ] ; then
         rm -f $tmpfile
         printf "    Decrypt existing document                            "
-        echo "$VALGRIND $xmlsec_app decrypt $xmlsec_params $params1 $full_file.xml" >>  $curlogfile
+        echo "$extra_vars $VALGRIND $xmlsec_app decrypt $xmlsec_params $params1 $full_file.xml" >>  $curlogfile
         $VALGRIND $xmlsec_app decrypt $xmlsec_params $params1 --output $tmpfile $full_file.xml >> $curlogfile  2>> $curlogfile
         res=$?
         echo "=== TEST RESULT: $res; expected: $expected_res" >> $curlogfile
-        if [ $res = 0 -a "$expected_res" = "$res_success" ]; then
+        if [ $res -eq 0 -a "$expected_res" = "$res_success" ]; then
             if [ "z$outputTransform" != "z" ] ; then
                 cat $tmpfile | $outputTransform > $tmpfile.2
                 mv $tmpfile.2 $tmpfile
@@ -420,7 +445,7 @@ execEncTest() {
         else
             printRes $expected_res $res
         fi
-    	if [ $? != 0 ]; then
+    	if [ $? -ne 0 ]; then
             failures=`expr $failures + 1`
     	fi
     fi
@@ -428,21 +453,21 @@ execEncTest() {
     if [ -n "$params2" -a -z "$PERF_TEST" ] ; then
         rm -f $tmpfile
         printf "    Encrypt document                                     "
-        echo "$VALGRIND $xmlsec_app encrypt $xmlsec_params $params2 --output $tmpfile $full_file.tmpl" >>  $curlogfile 
+        echo "$extra_vars $VALGRIND $xmlsec_app encrypt $xmlsec_params $params2 --output $tmpfile $full_file.tmpl" >>  $curlogfile
         $VALGRIND $xmlsec_app encrypt $xmlsec_params $params2 --output $tmpfile $full_file.tmpl >> $curlogfile 2>> $curlogfile
         printRes $res_success $?
-        if [ $? != 0 ]; then
+        if [ $? -ne 0 ]; then
             failures=`expr $failures + 1`
         fi
     fi
 
-    if [ -n "$params3" -a -z "$PERF_TEST" ] ; then 
+    if [ -n "$params3" -a -z "$PERF_TEST" ] ; then
         rm -f $tmpfile.2
         printf "    Decrypt new document                                 "
-        echo "$VALGRIND $xmlsec_app decrypt $xmlsec_params $params3 --output $tmpfile.2 $tmpfile" >>  $curlogfile
+        echo "$extra_vars $VALGRIND $xmlsec_app decrypt $xmlsec_params $params3 --output $tmpfile.2 $tmpfile" >>  $curlogfile
         $VALGRIND $xmlsec_app decrypt $xmlsec_params $params3 --output $tmpfile.2 $tmpfile >> $curlogfile 2>> $curlogfile
         res=$?
-        if [ $res = 0 ]; then
+        if [ $res -eq 0 ]; then
             if [ "z$outputTransform" != "z" ] ; then
                 cat $tmpfile.2 | $outputTransform > $tmpfile
                 mv $tmpfile $tmpfile.2
@@ -452,20 +477,20 @@ execEncTest() {
         else
             printRes $res_success $res
         fi
-        if [ $? != 0 ]; then
+        if [ $? -ne 0 ]; then
             failures=`expr $failures + 1`
         fi
     fi
 
     # save logs
     cat $curlogfile >> $logfile
-    if [ $failures != 0 ] ; then
+    if [ $failures -ne 0 ] ; then
         cat $curlogfile >> $failedlogfile
     fi
 
     # cleanup
     cd $old_pwd
-    rm -f $tmpfile $tmpfile.2 
+    rm -f $tmpfile $tmpfile.2
 }
 
 # prepare
@@ -478,13 +503,17 @@ source "$testfile"
 echo "--- TOTAL OK: $count_success; TOTAL FAILED: $count_fail; TOTAL SKIPPED: $count_skip" >> $logfile
 echo "--- TOTAL OK: $count_success; TOTAL FAILED: $count_fail; TOTAL SKIPPED: $count_skip"
 
-# print log file if failed
-if [ $count_fail != 0 ] ; then
+# print log file if failed (we have to have at least some good tests)
+if [ $count_fail -ne 0 ] ; then
     cat $failedlogfile
+    exit_code=$count_fail
+elif [ $count_success -eq 0 ] ; then
+    cat $logfile
+    exit_code=1
 fi
 
 # cleanup
 rm -rf $tmpfile $tmpfile.2 tmpfile.3 $curlogfile
 
-exit $count_fail
+exit $exit_code
 

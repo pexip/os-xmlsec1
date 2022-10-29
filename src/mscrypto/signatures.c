@@ -6,7 +6,7 @@
  * distribution for preciese wording.
  *
  * Copyright (C) 2003 Cordys R&D BV, All rights reserved.
- * Copyright (C) 2003-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2005-2006 Cryptocom LTD (http://www.cryptocom.ru).
  */
 /**
@@ -35,7 +35,9 @@
 #include <xmlsec/mscrypto/symbols.h>
 #include <xmlsec/mscrypto/certkeys.h>
 #include <xmlsec/mscrypto/x509.h>
+
 #include "private.h"
+#include "../cast_helpers.h"
 
 
 /**************************************************************************
@@ -57,13 +59,9 @@ struct _xmlSecMSCryptoSignatureCtx {
  *
  * Signature transforms
  *
- * xmlSecMSCryptoSignatureCtx is located after xmlSecTransform
- *
  *****************************************************************************/
-#define xmlSecMSCryptoSignatureSize     \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecMSCryptoSignatureCtx))
-#define xmlSecMSCryptoSignatureGetCtx(transform) \
-    ((xmlSecMSCryptoSignatureCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+XMLSEC_TRANSFORM_DECLARE(MSCryptoSignature, xmlSecMSCryptoSignatureCtx)
+#define xmlSecMSCryptoSignatureSize XMLSEC_TRANSFORM_SIZE(MSCryptoSignature)
 
 static int      xmlSecMSCryptoSignatureCheckId          (xmlSecTransformPtr transform);
 static int      xmlSecMSCryptoSignatureInitialize       (xmlSecTransformPtr transform);
@@ -308,10 +306,13 @@ static int xmlSecMSCryptoSignatureVerify(xmlSecTransformPtr transform,
                                          xmlSecTransformCtxPtr transformCtx) {
     xmlSecMSCryptoSignatureCtxPtr ctx;
     xmlSecBuffer tmp;
+    int tmp_buf_initialized = 0;
     xmlSecByte *tmpBuf;
     HCRYPTKEY hKey;
+    DWORD dwDataSize;
     DWORD dwError;
     int ret;
+    int res = -1;
 
     xmlSecAssert2(xmlSecMSCryptoSignatureCheckId(transform), -1);
     xmlSecAssert2(transform->operation == xmlSecTransformOperationVerify, -1);
@@ -326,11 +327,11 @@ static int xmlSecMSCryptoSignatureVerify(xmlSecTransformPtr transform,
 
     ret = xmlSecBufferInitialize(&tmp, dataSize);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferInitialize",
-                             xmlSecTransformGetName(transform),
-                             "dataSize=%d", dataSize);
-        return(-1);
+        xmlSecInternalError2("xmlSecBufferInitialize", xmlSecTransformGetName(transform),
+            "dataSize=" XMLSEC_SIZE_FMT,  dataSize);
+        goto done;
     }
+    tmp_buf_initialized = 1;
 
     tmpBuf = xmlSecBufferGetData(&tmp);
     xmlSecAssert2(tmpBuf != NULL, -1);
@@ -393,41 +394,39 @@ static int xmlSecMSCryptoSignatureVerify(xmlSecTransformPtr transform,
 
     {
         xmlSecInvalidTypeError("Invalid signature algorithm", xmlSecTransformGetName(transform));
-        xmlSecBufferFinalize(&tmp);
-        return(-1);
+        goto done;
     }
 
     hKey = xmlSecMSCryptoKeyDataGetKey(ctx->data, xmlSecKeyDataTypePublic);
     if (hKey == 0) {
-        xmlSecInternalError("xmlSecMSCryptoKeyDataGetKey",
-                            xmlSecTransformGetName(transform));
-        xmlSecBufferFinalize(&tmp);
-        return(-1);
+        xmlSecInternalError("xmlSecMSCryptoKeyDataGetKey", xmlSecTransformGetName(transform));
+        goto done;
     }
-    if (!CryptVerifySignature(ctx->mscHash,
-                              tmpBuf,
-                              dataSize,
-                              hKey,
-                              NULL,
-                              0)) {
+
+    XMLSEC_SAFE_CAST_SIZE_TO_ULONG(dataSize, dwDataSize, goto done, xmlSecTransformGetName(transform));
+    if (!CryptVerifySignature(ctx->mscHash, tmpBuf, dwDataSize, hKey, NULL, 0)) {
         dwError = GetLastError();
-        if (NTE_BAD_SIGNATURE == dwError) {
-            xmlSecOtherError(XMLSEC_ERRORS_R_DATA_NOT_MATCH,
-                             xmlSecTransformGetName(transform),
-                             "CryptVerifySignature: signature does not verify");
+        if (NTE_BAD_SIGNATURE == HRESULT_FROM_WIN32(dwError)) {
+            xmlSecOtherError(XMLSEC_ERRORS_R_DATA_NOT_MATCH, xmlSecTransformGetName(transform),
+                "CryptVerifySignature: signature does not verify");
             transform->status = xmlSecTransformStatusFail;
-            xmlSecBufferFinalize(&tmp);
-            return(0);
+            goto done;
         } else {
-            xmlSecMSCryptoError("CryptVerifySignature",
-                                xmlSecTransformGetName(transform));
-            xmlSecBufferFinalize(&tmp);
-            return (-1);
+            xmlSecMSCryptoError("CryptVerifySignature", xmlSecTransformGetName(transform));
+            goto done;
         }
     }
-    xmlSecBufferFinalize(&tmp);
+
+    /* success */
     transform->status = xmlSecTransformStatusOk;
-    return(0);
+    res = 0;
+
+done:
+    /* cleanup */
+    if (tmp_buf_initialized != 0) {
+        xmlSecBufferFinalize(&tmp);
+    }
+    return(res);
 }
 
 
@@ -535,17 +534,19 @@ xmlSecMSCryptoSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTra
     }
 
     if((transform->status == xmlSecTransformStatusWorking) && (inSize > 0)) {
+        DWORD dwInSize;
+
         xmlSecAssert2(outSize == 0, -1);
 
-        if (!CryptHashData(ctx->mscHash, xmlSecBufferGetData(in), inSize, 0)) {
+        XMLSEC_SAFE_CAST_SIZE_TO_ULONG(inSize, dwInSize, return(-1), NULL);
+        if (!CryptHashData(ctx->mscHash, xmlSecBufferGetData(in), dwInSize, 0)) {
             xmlSecMSCryptoError("CryptHashData", NULL);
             return(-1);
         }
 
         ret = xmlSecBufferRemoveHead(in, inSize);
         if(ret < 0) {
-            xmlSecInternalError("xmlSecBufferRemoveHead",
-                                xmlSecTransformGetName(transform));
+            xmlSecInternalError("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform));
             return(-1);
         }
     }
@@ -561,13 +562,13 @@ xmlSecMSCryptoSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTra
                 xmlSecMSCryptoError("CryptSignHash", NULL);
                 return(-1);
             }
-            outSize = (xmlSecSize)dwSigLen;
+            XMLSEC_SAFE_CAST_ULONG_TO_SIZE(dwSigLen, outSize, return(-1), NULL);
 
             ret = xmlSecBufferInitialize(&tmp, outSize);
             if(ret < 0) {
                 xmlSecInternalError2("xmlSecBufferSetMaxSize",
                                      xmlSecTransformGetName(transform),
-                                     "size=%d", outSize);
+                                     "size=" XMLSEC_SIZE_FMT, outSize);
                 return(-1);
             }
             tmpBuf = xmlSecBufferGetData(&tmp);
@@ -578,13 +579,12 @@ xmlSecMSCryptoSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTra
                 xmlSecBufferFinalize(&tmp);
                 return(-1);
             }
-            outSize = (xmlSecSize)dwSigLen;
+            XMLSEC_SAFE_CAST_ULONG_TO_SIZE(dwSigLen, outSize, return(-1), NULL);
 
             ret = xmlSecBufferSetSize(out, outSize);
             if(ret < 0) {
-                xmlSecInternalError2("xmlSecBufferSetSize",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", outSize);
+                xmlSecInternalError2("xmlSecBufferSetSize", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, outSize);
                 xmlSecBufferFinalize(&tmp);
                 return(-1);
             }

@@ -23,11 +23,9 @@
 #include <nss.h>
 #include <pk11func.h>
 #include <keyhi.h>
-#include <key.h>
 #include <hasht.h>
 
 #include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/errors.h>
@@ -35,18 +33,15 @@
 #include <xmlsec/nss/crypto.h>
 #include <xmlsec/nss/pkikeys.h>
 
+#include "../cast_helpers.h"
+
 /*********************************************************************
  *
- * Key transport transforms
+ * Key transport transforms context
  *
  ********************************************************************/
-typedef struct _xmlSecNssKeyTransportCtx                        xmlSecNssKeyTransportCtx;
-typedef struct _xmlSecNssKeyTransportCtx*                   xmlSecNssKeyTransportCtxPtr;
-
-#define xmlSecNssKeyTransportSize       \
-        (sizeof(xmlSecTransform) + sizeof(xmlSecNssKeyTransportCtx))
-#define xmlSecNssKeyTransportGetCtx(transform) \
-        ((xmlSecNssKeyTransportCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+typedef struct _xmlSecNssKeyTransportCtx       xmlSecNssKeyTransportCtx;
+typedef struct _xmlSecNssKeyTransportCtx*      xmlSecNssKeyTransportCtxPtr;
 
 struct _xmlSecNssKeyTransportCtx {
         CK_MECHANISM_TYPE               cipher;
@@ -55,6 +50,14 @@ struct _xmlSecNssKeyTransportCtx {
         xmlSecKeyDataId                 keyId;
         xmlSecBufferPtr                 material; /* to be encrypted/decrypted material */
 };
+
+/*********************************************************************
+ *
+ * Key transport transform
+ *
+ ********************************************************************/
+XMLSEC_TRANSFORM_DECLARE(NssKeyTransport, xmlSecNssKeyTransportCtx)
+#define xmlSecNssKeyTransportSize XMLSEC_TRANSFORM_SIZE(NssKeyTransport)
 
 static int      xmlSecNssKeyTransportInitialize         (xmlSecTransformPtr transform);
 static void     xmlSecNssKeyTransportFinalize           (xmlSecTransformPtr transform);
@@ -232,7 +235,7 @@ xmlSecNssKeyTransportSetKey(xmlSecTransformPtr transform, xmlSecKeyPtr key) {
 static int
 xmlSecNssKeyTransportCtxInit(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr in, xmlSecBufferPtr out,
                              int encrypt, xmlSecTransformCtxPtr transformCtx) {
-    int blockSize;
+    xmlSecSize blockSize;
 
     xmlSecAssert2(ctx != NULL, -1);
     xmlSecAssert2(ctx->cipher != CKM_INVALID_MECHANISM, -1);
@@ -254,34 +257,37 @@ xmlSecNssKeyTransportCtxInit(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr in
             return(-1);
         }
     } else if(ctx->prikey != NULL) {
-        blockSize = PK11_SignatureLen(ctx->prikey);
-        if(blockSize <= 0) {
+        int blockLen;
+
+        blockLen = PK11_SignatureLen(ctx->prikey);
+        if(blockLen <= 0) {
             xmlSecNssError("PK11_SignatureLen", NULL);
             return(-1);
         }
+        XMLSEC_SAFE_CAST_INT_TO_SIZE(blockLen, blockSize, return(-1), NULL);
     } else {
         xmlSecOtherError(XMLSEC_ERRORS_R_KEY_NOT_FOUND, NULL,
-                         "neither public or private keys are set");
+            "neither public or private keys are set");
         return(-1);
     }
 
     ctx->material = xmlSecBufferCreate(blockSize);
     if(ctx->material == NULL) {
         xmlSecInternalError2("xmlSecBufferSetData", NULL,
-                             "size=%lu", (long unsigned)blockSize);
+            "size=" XMLSEC_SIZE_FMT, blockSize);
         return(-1);
     }
 
     /* read raw key material into context */
     if(xmlSecBufferSetData(ctx->material, xmlSecBufferGetData(in), xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferSetData", NULL,
-                             "size=%lu", (long unsigned)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
 
     if(xmlSecBufferRemoveHead(in, xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferRemoveHead", NULL,
-                             "size=%lu", (long unsigned)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
 
@@ -303,13 +309,13 @@ xmlSecNssKeyTransportCtxUpdate(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr 
     /* read raw key material and append into context */
     if(xmlSecBufferAppend(ctx->material, xmlSecBufferGetData(in), xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferAppend", NULL,
-                             "size=%lu", (long unsigned)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
 
     if(xmlSecBufferRemoveHead(in, xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferRemoveHead", NULL,
-                             "size=%lu", (long unsigned)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
     return(0);
@@ -321,7 +327,8 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
     PK11SymKey*  symKey;
     PK11SlotInfo* slot;
     SECItem oriskv;
-    int blockSize;
+    xmlSecSize blockSize, materialSize, resultSize;
+    unsigned int resultLen;
     xmlSecBufferPtr result;
 
     xmlSecAssert2(ctx != NULL, -1);
@@ -336,13 +343,14 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
     /* read raw key material and append into context */
     if(xmlSecBufferAppend(ctx->material, xmlSecBufferGetData(in), xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferAppend", NULL,
-                             "size=%lu", (unsigned long)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
+    materialSize = xmlSecBufferGetSize(ctx->material);
 
     if(xmlSecBufferRemoveHead(in, xmlSecBufferGetSize(in)) < 0) {
         xmlSecInternalError2("xmlSecBufferRemoveHead", NULL,
-                             "size=%lu", (unsigned long)xmlSecBufferGetSize(in));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(in));
         return(-1);
     }
 
@@ -355,11 +363,14 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
             return(-1);
         }
     } else if(ctx->prikey != NULL) {
-        blockSize = PK11_SignatureLen(ctx->prikey);
-        if(blockSize <= 0) {
+        int blockLen;
+
+        blockLen = PK11_SignatureLen(ctx->prikey);
+        if(blockLen <= 0) {
             xmlSecNssError("PK11_SignatureLen", NULL);
             return(-1);
         }
+        XMLSEC_SAFE_CAST_INT_TO_SIZE(blockLen, blockSize, return(-1), NULL);
     } else {
         xmlSecOtherError(XMLSEC_ERRORS_R_KEY_NOT_FOUND, NULL,
                          "neither public or private keys are set");
@@ -371,10 +382,12 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
         xmlSecInternalError("xmlSecBufferCreate", NULL);
         return(-1);
     }
+    resultSize = xmlSecBufferGetMaxSize(result);
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(resultSize, resultLen, return(-1), NULL);
 
     oriskv.type = siBuffer;
     oriskv.data = xmlSecBufferGetData(ctx->material);
-    oriskv.len = xmlSecBufferGetSize(ctx->material);
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(materialSize, oriskv.len, return(-1), NULL);
 
     if(encrypt != 0) {
         CK_OBJECT_HANDLE id;
@@ -410,7 +423,7 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
 
         wrpskv.type = siBuffer;
         wrpskv.data = xmlSecBufferGetData(result);
-        wrpskv.len = xmlSecBufferGetMaxSize(result);
+        wrpskv.len  = resultLen;
 
         if(PK11_PubWrapSymKey(ctx->cipher, ctx->pubkey, symKey, &wrpskv) != SECSuccess) {
             xmlSecNssError("PK11_PubWrapSymKey", NULL);
@@ -422,7 +435,7 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
 
         if(xmlSecBufferSetSize(result, wrpskv.len) < 0) {
             xmlSecInternalError2("xmlSecBufferSetSize", NULL,
-                                 "size=%lu", (unsigned long)wrpskv.len);
+                "size=%u", wrpskv.len);
             PK11_FreeSymKey(symKey);
             xmlSecBufferDestroy(result);
             PK11_FreeSlot(slot);
@@ -459,7 +472,7 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
 
         if(xmlSecBufferSetData(result, keyItem->data, keyItem->len) < 0) {
             xmlSecInternalError2("xmlSecBufferSetData", NULL,
-                                 "size=%lu", (unsigned long)keyItem->len);
+                "size=%u", keyItem->len);
             PK11_FreeSymKey(symKey);
             xmlSecBufferDestroy(result);
             return(-1);
@@ -470,7 +483,7 @@ xmlSecNssKeyTransportCtxFinal(xmlSecNssKeyTransportCtxPtr ctx, xmlSecBufferPtr i
     /* Write output */
     if(xmlSecBufferAppend(out, xmlSecBufferGetData(result), xmlSecBufferGetSize(result)) < 0) {
         xmlSecInternalError2("xmlSecBufferAppend", NULL,
-                             "size=%lu", (unsigned long)xmlSecBufferGetSize(result));
+            "size=" XMLSEC_SIZE_FMT, xmlSecBufferGetSize(result));
         xmlSecBufferDestroy(result);
         return(-1);
     }

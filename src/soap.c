@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2017 Aleksey Sanin <aleksey@aleksey.com>
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>
  */
 /**
  * SECTION:soap
@@ -26,6 +26,8 @@
 #include <xmlsec/xmltree.h>
 #include <xmlsec/soap.h>
 #include <xmlsec/errors.h>
+
+#include "cast_helpers.h"
 
 /***********************************************************************
  *
@@ -745,7 +747,7 @@ xmlSecSoap12AddFaultEntry(xmlNodePtr envNode, xmlSecSoap12FaultCode faultCode,
                                        faultCode);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecQName2IntegerNodeWrite", NULL,
-                             "faultCode=%d", faultCode);
+            "faultCode=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(faultCode));
         xmlUnlinkNode(faultNode);
         xmlFreeNode(faultNode);
         return(NULL);

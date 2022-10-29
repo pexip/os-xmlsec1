@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:dl
@@ -41,9 +41,11 @@
 #include <ltdl.h>
 #endif /* XMLSEC_DL_LIBLTDL */
 
-#ifdef XMLSEC_DL_WIN32
+#if defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32)
 #include <windows.h>
-#endif /* XMLSEC_DL_WIN32 */
+#endif /* defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32) */
+
+#include "cast_helpers.h"
 
 /***********************************************************************
  *
@@ -62,9 +64,9 @@ struct _xmlSecCryptoDLLibrary {
     lt_dlhandle handle;
 #endif /* XMLSEC_DL_LIBLTDL */
 
-#ifdef XMLSEC_DL_WIN32
+#if defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32)
     HINSTANCE   handle;
-#endif /* XMLSEC_DL_WIN32 */
+#endif /* defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32) */
 };
 
 static xmlSecCryptoDLLibraryPtr xmlSecCryptoDLLibraryCreate             (const xmlChar* name);
@@ -83,7 +85,8 @@ static xmlSecPtrListKlass xmlSecCryptoDLLibrariesListKlass = {
 };
 static xmlSecPtrListId          xmlSecCryptoDLLibrariesListGetKlass     (void);
 static int                      xmlSecCryptoDLLibrariesListFindByName   (xmlSecPtrListPtr list,
-                                                                         const xmlChar* name);
+                                                                         const xmlChar* name,
+                                                                         xmlSecSize* pos);
 
 typedef xmlSecCryptoDLFunctionsPtr xmlSecCryptoGetFunctionsCallback(void);
 
@@ -147,8 +150,8 @@ xmlSecCryptoDLLibraryCreate(const xmlChar* name) {
     }
 #endif /* XMLSEC_DL_LIBLTDL */
 
-#ifdef XMLSEC_DL_WIN32
-#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP)
+#if defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32)
+#if !defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)
     lib->handle = LoadLibraryA((char*)lib->filename);
 #else
     LPWSTR wcLibFilename = xmlSecWin32ConvertUtf8ToUnicode(lib->filename);
@@ -177,7 +180,7 @@ xmlSecCryptoDLLibraryCreate(const xmlChar* name) {
         xmlSecCryptoDLLibraryDestroy(lib);
         return(NULL);
     }
-#endif /* XMLSEC_DL_WIN32 */
+#endif /* defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32) */
 
     if(getFunctions == NULL) {
         xmlSecInternalError("invalid configuration: no way to load library", NULL);
@@ -224,7 +227,7 @@ xmlSecCryptoDLLibraryDestroy(xmlSecCryptoDLLibraryPtr lib) {
     }
 #endif /* XMLSEC_DL_LIBLTDL */
 
-#ifdef XMLSEC_DL_WIN32
+#if defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32)
     if(lib->handle != NULL) {
         BOOL res;
 
@@ -233,7 +236,7 @@ xmlSecCryptoDLLibraryDestroy(xmlSecCryptoDLLibraryPtr lib) {
             xmlSecIOError("FreeLibrary", NULL, NULL);
         }
         }
-#endif /* XMLSEC_DL_WIN32*/
+#endif /* defined(XMLSEC_WINDOWS) && defined(XMLSEC_DL_WIN32)*/
 
     memset(lib, 0, sizeof(xmlSecCryptoDLLibrary));
     xmlFree(lib);
@@ -247,24 +250,29 @@ xmlSecCryptoDLLibraryDuplicate(xmlSecCryptoDLLibraryPtr lib) {
     return(xmlSecCryptoDLLibraryCreate(lib->name));
 }
 
+#define XMLSEC_CRYPTO_DL_LIB_TMPL   "lib%s-%s"
 static xmlChar*
 xmlSecCryptoDLLibraryConstructFilename(const xmlChar* name) {
-    static char tmpl[] = "lib%s-%s";
     xmlChar* res;
+    xmlSecSize size;
     int len;
     int ret;
 
     xmlSecAssert2(name != NULL, NULL);
 
-    /* TODO */
-    len = xmlStrlen(BAD_CAST PACKAGE) + xmlStrlen(name) + xmlStrlen(BAD_CAST tmpl) + 1;
-    res = (xmlChar*)xmlMalloc(len + 1);
+    size = xmlSecStrlen(BAD_CAST PACKAGE) +
+           xmlSecStrlen(name) +
+           xmlSecStrlen(BAD_CAST XMLSEC_CRYPTO_DL_LIB_TMPL) +
+           1;
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(size, len, return(NULL), NULL);
+
+    res = (xmlChar*)xmlMalloc(size + 1);
     if(res == NULL) {
-        xmlSecMallocError(len + 1, NULL);
+        xmlSecMallocError(size + 1, NULL);
         return(NULL);
     }
 
-    ret = xmlStrPrintf(res, len, tmpl, PACKAGE, name);
+    ret = xmlStrPrintf(res, len, XMLSEC_CRYPTO_DL_LIB_TMPL, PACKAGE, name);
     if(ret < 0) {
         xmlSecXmlError("xmlStrPrintf", NULL);
         xmlFree(res);
@@ -274,23 +282,27 @@ xmlSecCryptoDLLibraryConstructFilename(const xmlChar* name) {
     return(res);
 }
 
+#define XMLSEC_CRYPTO_DL_GET_FUNCTIONS_TMPL  "xmlSecCryptoGetFunctions_%s"
+
 static xmlChar*
 xmlSecCryptoDLLibraryConstructGetFunctionsName(const xmlChar* name) {
-    static char tmpl[] = "xmlSecCryptoGetFunctions_%s";
     xmlChar* res;
     int len;
+    xmlSecSize size;
     int ret;
 
     xmlSecAssert2(name != NULL, NULL);
 
-    len = xmlStrlen(name) + xmlStrlen(BAD_CAST tmpl) + 1;
-    res = (xmlChar*)xmlMalloc(len + 1);
+    len = xmlStrlen(name) + xmlStrlen(BAD_CAST XMLSEC_CRYPTO_DL_GET_FUNCTIONS_TMPL) + 1;
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(len, size, return(NULL), -1);
+
+    res = (xmlChar*)xmlMalloc(size + 1);
     if(res == NULL) {
-        xmlSecMallocError(len + 1, NULL);
+        xmlSecMallocError(size + 1, NULL);
         return(NULL);
     }
 
-    ret = xmlStrPrintf(res, len, tmpl, name);
+    ret = xmlStrPrintf(res, len, XMLSEC_CRYPTO_DL_GET_FUNCTIONS_TMPL, name);
     if(ret < 0) {
         xmlSecXmlError("xmlStrPrintf", NULL);
         xmlFree(res);
@@ -306,18 +318,20 @@ xmlSecCryptoDLLibrariesListGetKlass(void) {
 }
 
 static int
-xmlSecCryptoDLLibrariesListFindByName(xmlSecPtrListPtr list, const xmlChar* name) {
-    xmlSecSize i, size;
+xmlSecCryptoDLLibrariesListFindByName(xmlSecPtrListPtr list, const xmlChar* name, xmlSecSize* pos) {
+    xmlSecSize ii, size;
     xmlSecCryptoDLLibraryPtr lib;
 
     xmlSecAssert2(xmlSecPtrListCheckId(list, xmlSecCryptoDLLibrariesListGetKlass()), -1);
     xmlSecAssert2(name != NULL, -1);
+    xmlSecAssert2(pos != NULL, -1);
 
     size = xmlSecPtrListGetSize(list);
-    for(i = 0; i < size; ++i) {
-        lib = (xmlSecCryptoDLLibraryPtr)xmlSecPtrListGetItem(list, i);
+    for(ii = 0; ii < size; ++ii) {
+        lib = (xmlSecCryptoDLLibraryPtr)xmlSecPtrListGetItem(list, ii);
         if((lib != NULL) && (lib->name != NULL) && (xmlStrcmp(lib->name, name) == 0)) {
-            return(i);
+            (*pos) = ii;
+            return(0);
         }
     }
     return(-1);
@@ -434,31 +448,30 @@ xmlSecCryptoDLLoadLibrary(const xmlChar* crypto) {
 xmlSecCryptoDLFunctionsPtr
 xmlSecCryptoDLGetLibraryFunctions(const xmlChar* crypto) {
     xmlSecCryptoDLLibraryPtr lib;
-    int pos;
+    xmlSecSize pos;
     int ret;
 
     xmlSecAssert2(crypto != NULL, NULL);
 
-    pos = xmlSecCryptoDLLibrariesListFindByName(&gXmlSecCryptoDLLibraries, crypto);
-    if(pos >= 0) {
+    ret = xmlSecCryptoDLLibrariesListFindByName(&gXmlSecCryptoDLLibraries, crypto, &pos);
+    if(ret >= 0) {
         lib = (xmlSecCryptoDLLibraryPtr)xmlSecPtrListGetItem(&gXmlSecCryptoDLLibraries, pos);
         xmlSecAssert2(lib != NULL, NULL);
         xmlSecAssert2(lib->functions != NULL, NULL);
-
         return(lib->functions);
     }
 
     lib = xmlSecCryptoDLLibraryCreate(crypto);
     if(lib == NULL) {
         xmlSecInternalError2("xmlSecCryptoDLLibraryCreate", NULL,
-                             "crypto=%s", xmlSecErrorsSafeString(crypto));
+            "crypto=%s", xmlSecErrorsSafeString(crypto));
         return(NULL);
     }
 
     ret = xmlSecPtrListAdd(&gXmlSecCryptoDLLibraries, lib);
     if(ret < 0) {
         xmlSecInternalError2("xmlSecPtrListAdd", NULL,
-                             "crypto=%s", xmlSecErrorsSafeString(crypto));
+            "crypto=%s", xmlSecErrorsSafeString(crypto));
         xmlSecCryptoDLLibraryDestroy(lib);
         return(NULL);
     }
@@ -480,13 +493,13 @@ xmlSecCryptoDLGetLibraryFunctions(const xmlChar* crypto) {
 int
 xmlSecCryptoDLUnloadLibrary(const xmlChar* crypto) {
     xmlSecCryptoDLLibraryPtr lib;
-    int pos;
+    xmlSecSize pos;
     int ret;
 
     xmlSecAssert2(crypto != NULL, -1);
 
-    pos = xmlSecCryptoDLLibrariesListFindByName(&gXmlSecCryptoDLLibraries, crypto);
-    if(pos < 0) {
+    ret = xmlSecCryptoDLLibrariesListFindByName(&gXmlSecCryptoDLLibraries, crypto, &pos);
+    if(ret < 0) {
         /* todo: is it an error? */
         return(0);
     }

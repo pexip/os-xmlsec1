@@ -208,7 +208,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp README
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -305,6 +305,7 @@ OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
 OPENSSL_CRYPTO_LIB = @OPENSSL_CRYPTO_LIB@
 OPENSSL_LIBS = @OPENSSL_LIBS@
 OPENSSL_MIN_VERSION = @OPENSSL_MIN_VERSION@
+OPENSSL_TEST_CONFIG = @OPENSSL_TEST_CONFIG@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -447,7 +448,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
 EXTRA_DIST = \
-	README \
+	README.md \
 	$(NULL)
 
 lib_LTLIBRARIES = \

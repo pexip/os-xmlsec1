@@ -11,6 +11,7 @@
 
 #ifndef XMLSEC_NO_X509
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
@@ -52,6 +53,8 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngKeyDataX509AdoptKeyCert   (xm
                                                                               PCCERT_CONTEXT cert);
 XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngKeyDataX509AdoptCert      (xmlSecKeyDataPtr data,
                                                                               PCCERT_CONTEXT cert);
+XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngKeyDataX509AdoptCrl       (xmlSecKeyDataPtr data,
+                                                                              PCCRL_CONTEXT crl);
 XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngX509StoreAdoptCert        (xmlSecKeyDataStorePtr store,
                                                                               PCCERT_CONTEXT cert,
                                                                               xmlSecKeyDataType type);
@@ -62,13 +65,20 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngX509StoreAdoptTrustedStore(xm
 XMLSEC_CRYPTO_EXPORT int                xmlSecMSCngX509StoreAdoptUntrustedStore(xmlSecKeyDataStorePtr store,
                                                                                 HCERTSTORE untrustedStore);
 XMLSEC_CRYPTO_EXPORT PCCERT_CONTEXT     xmlSecMSCngX509StoreVerify           (xmlSecKeyDataStorePtr store,
-									      HCERTSTORE certs,
-									      xmlSecKeyInfoCtx* keyInfoCtx);
+                                                                              HCERTSTORE certs,
+                                                                              xmlSecKeyInfoCtx* keyInfoCtx);
 PCCERT_CONTEXT                          xmlSecMSCngX509StoreFindCert         (xmlSecKeyDataStorePtr store,
                                                                               xmlChar *subjectName,
                                                                               xmlChar *issuerName,
                                                                               xmlChar *issuerSerial,
                                                                               xmlChar *ski,
+                                                                              xmlSecKeyInfoCtx* keyInfoCtx);
+PCCERT_CONTEXT                          xmlSecMSCngX509StoreFindCert_ex      (xmlSecKeyDataStorePtr store,
+                                                                              xmlChar* subjectName,
+                                                                              xmlChar* issuerName,
+                                                                              xmlChar* issuerSerial,
+                                                                              xmlSecByte* ski,
+                                                                              xmlSecSize skiSize,
                                                                               xmlSecKeyInfoCtx* keyInfoCtx);
 PCCERT_CONTEXT                          xmlSecMSCngX509FindCertBySubject     (HCERTSTORE store,
                                                                               LPTSTR wcSubject,

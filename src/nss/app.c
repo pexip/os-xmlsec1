@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 /**
@@ -40,6 +40,8 @@
 #include <xmlsec/nss/x509.h>
 #include <xmlsec/nss/pkikeys.h>
 #include <xmlsec/nss/keysstore.h>
+
+#include "../cast_helpers.h"
 
 /* workaround - NSS exports this but doesn't declare it */
 extern CERTCertificate * __CERT_NewTempCertificate              (CERTCertDBHandle *handle,
@@ -141,18 +143,21 @@ xmlSecNssAppShutdown(void) {
 
 static int
 xmlSecNssAppCreateSECItem(SECItem *contents, const xmlSecByte* data, xmlSecSize dataSize) {
+    unsigned int dataLen;
+
     xmlSecAssert2(contents != NULL, -1);
     xmlSecAssert2(data != NULL, -1);
 
     contents->data = 0;
-    if (!SECITEM_AllocItem(NULL, contents, dataSize)) {
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(dataSize, dataLen, return(-1), NULL);
+    if (!SECITEM_AllocItem(NULL, contents, dataLen)) {
         xmlSecNssError("SECITEM_AllocItem", NULL);
         return(-1);
     }
 
-    if(dataSize > 0) {
+    if(dataLen > 0) {
         xmlSecAssert2(contents->data != NULL, -1);
-        memcpy(contents->data,  data, dataSize);
+        memcpy(contents->data, data, dataLen);
     }
 
     return (0);
@@ -164,6 +169,7 @@ xmlSecNssAppReadSECItem(SECItem *contents, const char *fn) {
     PRFileDesc *file = NULL;
     PRInt32 numBytes;
     PRStatus prStatus;
+    unsigned int ulen;
     int ret = -1;
 
     xmlSecAssert2(contents != NULL, -1);
@@ -182,9 +188,10 @@ xmlSecNssAppReadSECItem(SECItem *contents, const char *fn) {
                         "filename=%s", xmlSecErrorsSafeString(fn));
         goto done;
     }
+    XMLSEC_SAFE_CAST_INT_TO_UINT(info.size, ulen, goto done, NULL);
 
     contents->data = 0;
-    if (!SECITEM_AllocItem(NULL, contents, info.size)) {
+    if (!SECITEM_AllocItem(NULL, contents, ulen)) {
         xmlSecNssError("SECITEM_AllocItem", NULL);
         goto done;
     }
@@ -371,7 +378,7 @@ xmlSecNssAppKeyLoadSECItem(SECItem* secItem, xmlSecKeyDataFormat format,
         break;
     default:
         xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, NULL,
-                         "format=%d", (int)format);
+            "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
         return(NULL);
     }
 
@@ -585,22 +592,21 @@ xmlSecNssAppKeyCertLoadSECItem(xmlSecKeyPtr key, SECItem* secItem, xmlSecKeyData
         cert = __CERT_NewTempCertificate(CERT_GetDefaultCertDB(),
                                          secItem, NULL, PR_FALSE, PR_TRUE);
         if(cert == NULL) {
-            xmlSecNssError2("__CERT_NewTempCertificate", NULL,
-                            "format=%d", (int)format);
+            xmlSecNssError2("__CERT_NewTempCertificate", xmlSecKeyDataGetName(data),
+                "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
             return(-1);
         }
         break;
     default:
-        xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, NULL,
-                         "format=%d", (int)format);
+        xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, xmlSecKeyDataGetName(data),
+            "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
         return(-1);
     }
 
     xmlSecAssert2(cert != NULL, -1);
     ret = xmlSecNssKeyDataX509AdoptCert(data, cert);
     if(ret < 0) {
-        xmlSecInternalError("xmlSecNssKeyDataX509AdoptCert",
-                            xmlSecKeyDataGetName(data));
+        xmlSecInternalError("xmlSecNssKeyDataX509AdoptCert", xmlSecKeyDataGetName(data));
         CERT_DestroyCertificate(cert);
         return(-1);
     }
@@ -725,7 +731,7 @@ xmlSecNssAppPkcs12LoadSECItem(SECItem* secItem, const char *pwd,
     CERTCertificate     *cert = NULL;
     CERTCertificate     *tmpcert = NULL;
     SEC_PKCS12DecoderContext *p12ctx = NULL;
-
+    size_t pwdSize;
 
     xmlSecAssert2((secItem != NULL), NULL);
 
@@ -744,7 +750,9 @@ xmlSecNssAppPkcs12LoadSECItem(SECItem* secItem, const char *pwd,
     }
 
     pwditem.data = (unsigned char *)pwd;
-    pwditem.len = strlen(pwd)+1;
+    pwdSize = strlen(pwd) + 1;
+    XMLSEC_SAFE_CAST_SIZE_T_TO_UINT(pwdSize, pwditem.len, goto done, NULL);
+
     if (!SECITEM_AllocItem(NULL, &uc2_pwditem, 2*pwditem.len)) {
         xmlSecNssError("SECITEM_AllocItem", NULL);
         goto done;
@@ -949,13 +957,13 @@ xmlSecNssAppKeyFromCertLoadSECItem(SECItem* secItem, xmlSecKeyDataFormat format)
                                          secItem, NULL, PR_FALSE, PR_TRUE);
         if(cert == NULL) {
             xmlSecNssError2("__CERT_NewTempCertificate", NULL,
-                            "format=%d", (int)format);
+                "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
             return(NULL);
         }
         break;
     default:
         xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, NULL,
-                         "format=%d", (int)format);
+            "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
         return(NULL);
     }
 
@@ -1128,13 +1136,13 @@ xmlSecNssAppKeysMngrCertLoadSECItem(xmlSecKeysMngrPtr mngr, SECItem* secItem,
                                          secItem, NULL, PR_FALSE, PR_TRUE);
         if(cert == NULL) {
             xmlSecNssError2("__CERT_NewTempCertificate", NULL,
-                            "format=%d", (int)format);
+                "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
             return(-1);
         }
         break;
     default:
         xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, NULL,
-                         "format=%d", (int)format);
+            "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
         return(-1);
     }
 

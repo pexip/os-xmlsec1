@@ -56,6 +56,7 @@ var withNT4 = 1;
 var buildUnicode = 1;
 var buildDebug = 0;
 var buildWerror = 0;
+var buildPedantic = 1;
 var buildCc = "cl.exe";
 var buildCflags = "";
 var buildStatic = 1;
@@ -68,6 +69,9 @@ var buildSoPrefix = "$(PREFIX)\\bin";
 var buildInclude = ".";
 var buildLib = ".";
 var cruntime = "/MD";
+
+/* Crypto options */
+var withOpenSSL3Engines = 0;
 
 /* Local stuff */
 var error = 0;
@@ -107,7 +111,8 @@ function usage()
 	txt += "either 'yes' or 'no'.\n\n";
 	txt += "XmlSec Library options, default value given in parentheses:\n\n";
 	txt += "  crypto:     Crypto engines list, first is default: \"openssl\",\n";
-	txt += "              \"openssl=100\", \"openssl=110\", \n";
+	txt += "              \"openssl=100\", \"openssl=100\", \"openssl=110\",\n";
+	txt += "              \"openssl-110\", \"openssl=300\", \"openssl-300\",\n";
 	txt += "              \"nss\", \"mscrypto\", \"mscng\" (\"" + withCrypto + "\");\n"
  	txt += "  xslt:       LibXSLT is used (" + (withLibXSLT? "yes" : "no")  + ")\n";
  	txt += "  iconv:      Use the iconv library (" + (withIconv? "yes" : "no")  + ")\n";
@@ -115,11 +120,12 @@ function usage()
 	txt += "\nWin32 build options, default value given in parentheses:\n\n";
 	txt += "  unicode:    Build Unicode version (" + (buildUnicode? "yes" : "no")  + ")\n";
 	txt += "  debug:      Build unoptimised debug executables (" + (buildDebug? "yes" : "no")  + ")\n";
-	txt += "  werror:     Build with warnings as errors(" + (buildWerror? "yes" : "no")  + ")\n";
+	txt += "  werror:     Build with warnings as errors (" + (buildWerror? "yes" : "no")  + ")\n";
+    txt += "  pedantic:   Build with more warnings enabled (" + (buildPedantic? "yes" : "no") + ")\n";
 	txt += "  cc:         Build with the specified compiler(" + buildCc  + ")\n";
 	txt += "  cflags:     Build with the specified compiler flags('" + buildCflags  + "')\n";
-	txt += "  static:     Link libxmlsec statically to xmlsec (" + (buildStatic? "yes" : "no")  + ")\n";
-	txt += "  with-dl:    Enable dynamic loading of xmlsec-crypto libraries (" + (buildWithDLSupport? "yes" : "no")  + ")\n";
+	txt += "  static:     Build static xmlsec libraries (" + (buildStatic? "yes" : "no")  + ")\n";
+	txt += "  with-dl:    Enable dynamic loading of xmlsec-crypto libraries (" + (buildWithDLSupport ? "yes" : "no") + ")\n";
 	txt += "  prefix:     Base directory for the installation (" + buildPrefix + ")\n";
 	txt += "  bindir:     Directory where xmlsec and friends should be installed\n";
 	txt += "              (" + buildBinPrefix + ")\n";
@@ -133,6 +139,8 @@ function usage()
 	txt += "              where libxml headers can be found (" + buildInclude + ")\n";
 	txt += "  lib:        Additional search path for the linker, particularily\n";
 	txt += "              where libxml library can be found (" + buildLib + ")\n";
+	txt += "\nCrypto options, default value given in parentheses:\n\n";
+	txt += "  with-openssl3-engines:    Enable dynamic loading of xmlsec-crypto libraries (" + (withOpenSSL3Engines ? "yes" : "no") + ")\n";	
 	WScript.Echo(txt);
 }
 
@@ -173,6 +181,7 @@ function discoverVersion()
 	vf.WriteLine("WITH_DEFAULT_CRYPTO=" + withDefaultCrypto);
 	vf.WriteLine("WITH_OPENSSL=" + withOpenSSL);
 	vf.WriteLine("WITH_OPENSSL_VERSION=XMLSEC_OPENSSL_" + withOpenSSLVersion);
+	vf.WriteLine("WITH_OPENSSL3_ENGINES=" + (withOpenSSL3Engines ? "1" : "0") );
 	vf.WriteLine("WITH_NSS=" + withNss);
 	vf.WriteLine("WITH_MSCRYPTO=" + withMSCrypto);
 	vf.WriteLine("WITH_MSCNG=" + withMSCng);
@@ -182,6 +191,7 @@ function discoverVersion()
 	vf.WriteLine("UNICODE=" + (buildUnicode? "1" : "0"));
 	vf.WriteLine("DEBUG=" + (buildDebug? "1" : "0"));
 	vf.WriteLine("WERROR=" + (buildWerror? "1" : "0"));
+	vf.WriteLine("PEDANTIC=" + (buildPedantic? "1" : "0"));
 	vf.WriteLine("CC=" + buildCc);
 	vf.WriteLine("CFLAGS=" + buildCflags);
 	vf.WriteLine("STATIC=" + (buildStatic? "1" : "0"));
@@ -318,6 +328,8 @@ for (i = 0; (i < WScript.Arguments.length) && (error == 0); i++) {
 			buildDebug = strToBool(arg.substring(opt.length + 1, arg.length));
 		else if (opt == "werror")
 			buildWerror = strToBool(arg.substring(opt.length + 1, arg.length));
+		else if (opt == "pedantic")
+			buildPedantic = strToBool(arg.substring(opt.length + 1, arg.length));
 		else if (opt == "cc")
 			buildCc = arg.substring(opt.length + 1, arg.length);
 		else if (opt == "cflags")
@@ -344,6 +356,8 @@ for (i = 0; (i < WScript.Arguments.length) && (error == 0); i++) {
 			buildLib = arg.substring(opt.length + 1, arg.length);
 		else if (opt == "cruntime")
 			cruntime = arg.substring(opt.length + 1, arg.length);
+		else if (opt == "with-openssl3-engines")
+			withOpenSSL3Engines = strToBool(arg.substring(opt.length + 1, arg.length));		
 		else
 			error = 1;
 	} else if (i == 0) {
@@ -375,14 +389,18 @@ for (j = 0; j < crlist.length; j++) {
 		curcrypto="openssl";
 		withOpenSSL = 1;
 		withOpenSSLVersion = "110"; /* default */
-	} else if (crlist[j] == "openssl=100") {
+	} else if (crlist[j] == "openssl=100" || crlist[j] == "openssl-100") {
 		curcrypto="openssl";
 		withOpenSSL = 1;
 		withOpenSSLVersion = "100";
-	} else if (crlist[j] == "openssl=110") {
+	} else if (crlist[j] == "openssl=110" || crlist[j] == "openssl-110") {
 		curcrypto="openssl";
 		withOpenSSL = 1;
 		withOpenSSLVersion = "110";
+	} else if (crlist[j] == "openssl=300" || crlist[j] == "openssl-300") {
+		curcrypto="openssl";
+		withOpenSSL = 1;
+		withOpenSSLVersion = "300";
 	} else if (crlist[j] == "nss") {
 		curcrypto="nss";
 		withNss = 1;
@@ -448,9 +466,10 @@ txtOut += "  C-Runtime option: " + cruntime + "\n";
 txtOut += "           Unicode: " + boolToStr(buildUnicode) + "\n";
 txtOut += "     Debug symbols: " + boolToStr(buildDebug) + "\n";
 txtOut += "Warnings as errors: " + boolToStr(buildWerror) + "\n";
+txtOut += "          Pedantic: " + boolToStr(buildPedantic) + "\n";
 txtOut += "        C compiler: " + buildCc + "\n";
 txtOut += "  C compiler flags: " + buildCflags + "\n";
-txtOut += "     Static xmlsec: " + boolToStr(buildStatic) + "\n";
+txtOut += "Static xmlsec libs: " + boolToStr(buildStatic) + "\n";
 txtOut += " Enable DL support: " + boolToStr(buildWithDLSupport) + "\n";
 txtOut += "    Install prefix: " + buildPrefix + "\n";
 txtOut += "      Put tools in: " + buildBinPrefix + "\n";
@@ -459,6 +478,10 @@ txtOut += "Put static libs in: " + buildLibPrefix + "\n";
 txtOut += "Put shared libs in: " + buildSoPrefix + "\n";
 txtOut += "      Include path: " + buildInclude + "\n";
 txtOut += "          Lib path: " + buildLib + "\n";
+txtOut += "\n";
+txtOut += "Crypto configuration\n";
+txtOut += "-------------------------\n";
+txtOut += "Use OpenSSL3 Engine: " + boolToStr(withOpenSSL3Engines) + "\n";
 WScript.Echo(txtOut);
 
 // Done.
