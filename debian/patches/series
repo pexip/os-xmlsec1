@@ -1,3 +1,4 @@
 skip-failing-tests.patch
 no-url-map-using-tests.diff
 source-is-a-bashism.diff
+openssl3-deprecations.patch

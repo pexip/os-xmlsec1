@@ -1,0 +1,34 @@
+diff --git a/include/xmlsec/openssl/crypto.h b/include/xmlsec/openssl/crypto.h
+index f3db718..8f74878 100644
+--- a/include/xmlsec/openssl/crypto.h
++++ b/include/xmlsec/openssl/crypto.h
+@@ -324,6 +324,9 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataDsaAdoptEvp (xmlSecK
+ XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataDsaGetEvp   (xmlSecKeyDataPtr data);
+ 
+ 
++#if defined(XMLSEC_OPENSSL_API_300) && defined(OPENSSL_NO_DEPRECATED_3_0)
++typedef void DSA;
++#endif
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int xmlSecOpenSSLKeyDataDsaAdoptDsa (xmlSecKeyDataPtr data,
+                                                                          DSA* dsa);
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT DSA* xmlSecOpenSSLKeyDataDsaGetDsa   (xmlSecKeyDataPtr data);
+@@ -373,6 +376,9 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataEcdsaAdoptEvp   (xml
+ XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataEcdsaGetEvp     (xmlSecKeyDataPtr data);
+ 
+ 
++#if defined(XMLSEC_OPENSSL_API_300) && defined(OPENSSL_NO_DEPRECATED_3_0)
++typedef void EC_KEY;
++#endif
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int xmlSecOpenSSLKeyDataEcdsaAdoptEcdsa (xmlSecKeyDataPtr data,
+                                                                              EC_KEY* ecdsa);
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT EC_KEY* xmlSecOpenSSLKeyDataEcdsaGetEcdsa   (xmlSecKeyDataPtr data);
+@@ -694,6 +700,9 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataRsaAdoptEvp (xmlSecK
+ XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataRsaGetEvp   (xmlSecKeyDataPtr data);
+ 
+ 
++#if defined(XMLSEC_OPENSSL_API_300) && defined(OPENSSL_NO_DEPRECATED_3_0)
++typedef void RSA;
++#endif
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int  xmlSecOpenSSLKeyDataRsaAdoptRsa (xmlSecKeyDataPtr data,
+                                                                          RSA* rsa);
+ XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT RSA* xmlSecOpenSSLKeyDataRsaGetRsa   (xmlSecKeyDataPtr data);
