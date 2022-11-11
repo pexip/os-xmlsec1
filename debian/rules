@@ -18,8 +18,7 @@ override_dh_auto_configure:
 		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
 		--disable-crypto-dl \
 		--disable-apps-crypto-dl \
-		--enable-soap \
-		--enable-openssl3-engines
+		--enable-soap
 
 override_dh_auto_build-indep:
 	dh_auto_configure -- \
