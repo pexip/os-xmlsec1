@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:relationship
@@ -89,16 +89,24 @@
 #include <xmlsec/transforms.h>
 #include <xmlsec/errors.h>
 
+#include "cast_helpers.h"
 
+
+/**************************************************************************
+ *
+ * XML Relationshi transform
+ *
+ * xmlSecTransform + xmlSecRelationshipCtx
+ *
+ ***************************************************************************/
 typedef struct _xmlSecRelationshipCtx           xmlSecRelationshipCtx,
                                                 *xmlSecRelationshipCtxPtr;
 struct _xmlSecRelationshipCtx {
     xmlSecPtrListPtr                    sourceIdList;
 };
-#define xmlSecRelationshipSize        \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecRelationshipCtx))
-#define xmlSecRelationshipGetCtx(transform)        \
-    ((xmlSecRelationshipCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+
+XMLSEC_TRANSFORM_DECLARE(Relationship, xmlSecRelationshipCtx)
+#define xmlSecRelationshipSize XMLSEC_TRANSFORM_SIZE(Relationship)
 
 static int              xmlSecRelationshipInitialize      (xmlSecTransformPtr transform);
 static void             xmlSecRelationshipFinalize        (xmlSecTransformPtr transform);
@@ -604,7 +612,7 @@ xmlSecTransformRelationshipPushXml(xmlSecTransformPtr transform, xmlSecNodeSetPt
     if(ret < 0) {
        xmlSecInternalError("xmlSecTransformRelationshipExecute",
                            xmlSecTransformGetName(transform));
-       xmlOutputBufferClose(buf);
+       (void)xmlOutputBufferClose(buf);
        return(-1);
     }
 
@@ -658,7 +666,7 @@ xmlSecTransformRelationshipPopBin(xmlSecTransformPtr transform, xmlSecByte* data
        if(ret < 0) {
             xmlSecInternalError("xmlC14NExecute",
                                 xmlSecTransformGetName(transform));
-           xmlOutputBufferClose(buf);
+           (void)xmlOutputBufferClose(buf);
            return(-1);
        }
 
@@ -689,7 +697,7 @@ xmlSecTransformRelationshipPopBin(xmlSecTransformPtr transform, xmlSecByte* data
            if(ret < 0) {
                xmlSecInternalError2("xmlSecBufferRemoveHead",
                                     xmlSecTransformGetName(transform),
-                                    "size=%d", outSize);
+                                    "size=" XMLSEC_SIZE_FMT, outSize);
                return(-1);
            }
        } else if(xmlSecBufferGetSize(out) == 0) {

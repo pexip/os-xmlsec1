@@ -22,8 +22,6 @@
 #include <nss.h>
 #include <secitem.h>
 
-#include <libxml/tree.h>
-
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/xmltree.h>
 #include <xmlsec/buffer.h>
@@ -33,13 +31,15 @@
 #include <xmlsec/nss/crypto.h>
 #include <xmlsec/nss/bignum.h>
 
+#include "../cast_helpers.h"
+
 /**
  * xmlSecNssNodeGetBigNumValue:
  * @arena: the arena from which to allocate memory
  * @cur: the pointer to an XML node.
  * @a: a SECItem object to hold the BigNum value
  *
- * Converts the node content from CryptoBinary format
+ * DEPRECATED. Converts the node content from CryptoBinary format
  * (http://www.w3.org/TR/xmldsig-core/#sec-CryptoBinary)
  * to a SECItem. If no SECItem object provided then a new
  * one is created (caller is responsible for freeing it).
@@ -51,8 +51,11 @@ SECItem *
 xmlSecNssNodeGetBigNumValue(PRArenaPool *arena, const xmlNodePtr cur,
                             SECItem *a) {
     xmlSecBuffer buf;
+    int bufInitialized = 0;
     int ret;
-    SECItem *rv;
+    SECItem *rv = NULL;
+    xmlSecSize size;
+    unsigned int ulen;
     int len;
 
     xmlSecAssert2(arena != NULL, NULL);
@@ -61,30 +64,34 @@ xmlSecNssNodeGetBigNumValue(PRArenaPool *arena, const xmlNodePtr cur,
     ret = xmlSecBufferInitialize(&buf, 128);
     if(ret < 0) {
         xmlSecInternalError("xmlSecBufferInitialize", NULL);
-        return(NULL);
+        goto done;
     }
+    bufInitialized = 1;
 
     ret = xmlSecBufferBase64NodeContentRead(&buf, cur);
     if(ret < 0) {
-        xmlSecInternalError("xmlSecBufferBase64NodeContentRead", NULL);
-        xmlSecBufferFinalize(&buf);
-        return(NULL);
+        xmlSecInternalError("xmlSecBufferBase66NodeContentRead", NULL);
+        goto done;
     }
 
-    len = xmlSecBufferGetSize(&buf);
+    size = xmlSecBufferGetSize(&buf);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(size, len, goto done, NULL);
+    XMLSEC_SAFE_CAST_INT_TO_UINT(len, ulen, goto done, NULL);
 
     if (a == NULL) {
-        rv = SECITEM_AllocItem(arena, NULL, len);
+        rv = SECITEM_AllocItem(arena, NULL, ulen);
     } else {
         rv = a;
         xmlSecAssert2(rv->data == NULL, NULL);
-        rv->len = len;
-        rv->data = PORT_ArenaZAlloc(arena, len);
+        rv->len = ulen;
+        rv->data = PORT_ArenaZAlloc(arena, ulen);
     }
+    PORT_Memcpy(rv->data, xmlSecBufferGetData(&buf), ulen);
 
-    PORT_Memcpy(rv->data, xmlSecBufferGetData(&buf), len);
-
-    xmlSecBufferFinalize(&buf);
+done:
+    if(bufInitialized) {
+        xmlSecBufferFinalize(&buf);
+    }
     return(rv);
 }
 
@@ -96,7 +103,7 @@ xmlSecNssNodeGetBigNumValue(PRArenaPool *arena, const xmlNodePtr cur,
  *              linebreaks will be added before and after
  *              new buffer content.
  *
- * Converts SECItem to CryptoBinary string
+ * DEPRECATED. Converts SECItem to CryptoBinary string
  * (http://www.w3.org/TR/xmldsig-core/#sec-CryptoBinary)
  * and sets it as the content of the given node. If the
  * addLineBreaks is set then line breaks are added
@@ -114,7 +121,8 @@ xmlSecNssNodeSetBigNumValue(xmlNodePtr cur, const SECItem *a, int addLineBreaks)
 
     ret = xmlSecBufferInitialize(&buf, a->len + 1);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferInitialize", NULL, "size=%d", a->len + 1);
+        xmlSecInternalError2("xmlSecBufferInitialize", NULL,
+            "size=%u", (a->len + 1));
         return(-1);
     }
 
@@ -122,7 +130,8 @@ xmlSecNssNodeSetBigNumValue(xmlNodePtr cur, const SECItem *a, int addLineBreaks)
 
     ret = xmlSecBufferSetSize(&buf, a->len);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=%d", a->len);
+        xmlSecInternalError2("xmlSecBufferSetSize", NULL,
+            "size=%u", a->len);
         xmlSecBufferFinalize(&buf);
         return(-1);
     }

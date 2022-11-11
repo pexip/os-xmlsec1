@@ -32,14 +32,10 @@
 #include <pk11func.h>
 #include <keyhi.h>
 
-#include <libxml/tree.h>
-
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/buffer.h>
 #include <xmlsec/base64.h>
 #include <xmlsec/errors.h>
-#include <xmlsec/xmltree.h>
-
 #include <xmlsec/keysmngr.h>
 
 #include <xmlsec/nss/crypto.h>
@@ -47,20 +43,16 @@
 #include <xmlsec/nss/x509.h>
 #include <xmlsec/nss/pkikeys.h>
 
+#include "../cast_helpers.h"
 /****************************************************************************
  *
  * Nss Keys Store. Uses Simple Keys Store under the hood
  *
- * Simple Keys Store ptr is located after xmlSecKeyStore
+ * xmlSecKeyStore +  xmlSecKeyStorePtr(Simple Keys Store ptr)
  *
  ***************************************************************************/
-#define xmlSecNssKeysStoreSize \
-        (sizeof(xmlSecKeyStore) + sizeof(xmlSecKeyStorePtr))
-
-#define xmlSecNssKeysStoreGetSS(store) \
-    ((xmlSecKeyStoreCheckSize((store), xmlSecNssKeysStoreSize)) ? \
-     (xmlSecKeyStorePtr*)(((xmlSecByte*)(store)) + sizeof(xmlSecKeyStore)) : \
-     (xmlSecKeyStorePtr*)NULL)
+XMLSEC_KEY_STORE_DECLARE(NssKeysStore, xmlSecKeyStorePtr)
+#define xmlSecNssKeysStoreSize XMLSEC_KEY_STORE_SIZE(NssKeysStore)
 
 static int                      xmlSecNssKeysStoreInitialize    (xmlSecKeyStorePtr store);
 static void                     xmlSecNssKeysStoreFinalize      (xmlSecKeyStorePtr store);
@@ -113,7 +105,7 @@ xmlSecNssKeysStoreAdoptKey(xmlSecKeyStorePtr store, xmlSecKeyPtr key) {
     xmlSecAssert2(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId), -1);
     xmlSecAssert2((key != NULL), -1);
 
-    ss = xmlSecNssKeysStoreGetSS(store);
+    ss = xmlSecNssKeysStoreGetCtx(store);
     xmlSecAssert2(((ss != NULL) && (*ss != NULL) &&
                    (xmlSecKeyStoreCheckId(*ss, xmlSecSimpleKeysStoreId))), -1);
 
@@ -133,92 +125,8 @@ xmlSecNssKeysStoreAdoptKey(xmlSecKeyStorePtr store, xmlSecKeyPtr key) {
 int
 xmlSecNssKeysStoreLoad(xmlSecKeyStorePtr store, const char *uri,
                             xmlSecKeysMngrPtr keysMngr ATTRIBUTE_UNUSED) {
-    xmlDocPtr doc;
-    xmlNodePtr root;
-    xmlNodePtr cur;
-    xmlSecKeyPtr key;
-    xmlSecKeyInfoCtx keyInfoCtx;
-    int ret;
-
-    xmlSecAssert2(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId), -1);
-    xmlSecAssert2((uri != NULL), -1);
-
-    doc = xmlParseFile(uri);
-    if(doc == NULL) {
-        xmlSecXmlError2("xmlParseFile", xmlSecKeyStoreGetName(store),
-                        "uri=%s", xmlSecErrorsSafeString(uri));
-        return(-1);
-    }
-
-    root = xmlDocGetRootElement(doc);
-    if(!xmlSecCheckNodeName(root, BAD_CAST "Keys", xmlSecNs)) {
-        xmlSecInvalidNodeError(root, BAD_CAST "Keys", xmlSecKeyStoreGetName(store));
-        xmlFreeDoc(doc);
-        return(-1);
-    }
-
-    cur = xmlSecGetNextElementNode(root->children);
-    while((cur != NULL) && xmlSecCheckNodeName(cur, xmlSecNodeKeyInfo, xmlSecDSigNs)) {
-        key = xmlSecKeyCreate();
-        if(key == NULL) {
-            xmlSecInternalError("xmlSecKeyCreate",
-                                xmlSecKeyStoreGetName(store));
-            xmlFreeDoc(doc);
-            return(-1);
-        }
-
-        ret = xmlSecKeyInfoCtxInitialize(&keyInfoCtx, NULL);
-        if(ret < 0) {
-            xmlSecInternalError("xmlSecKeyInfoCtxInitialize",
-                                xmlSecKeyStoreGetName(store));
-            xmlSecKeyDestroy(key);
-            xmlFreeDoc(doc);
-            return(-1);
-        }
-
-        keyInfoCtx.mode           = xmlSecKeyInfoModeRead;
-        keyInfoCtx.keysMngr       = NULL;
-        keyInfoCtx.flags          = XMLSEC_KEYINFO_FLAGS_DONT_STOP_ON_KEY_FOUND |
-                                    XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS;
-        keyInfoCtx.keyReq.keyId   = xmlSecKeyDataIdUnknown;
-        keyInfoCtx.keyReq.keyType = xmlSecKeyDataTypeAny;
-        keyInfoCtx.keyReq.keyUsage= xmlSecKeyDataUsageAny;
-
-        ret = xmlSecKeyInfoNodeRead(cur, key, &keyInfoCtx);
-        if(ret < 0) {
-            xmlSecInternalError("xmlSecKeyInfoNodeRead",
-                                xmlSecKeyStoreGetName(store));
-            xmlSecKeyInfoCtxFinalize(&keyInfoCtx);
-            xmlSecKeyDestroy(key);
-            xmlFreeDoc(doc);
-            return(-1);
-        }
-        xmlSecKeyInfoCtxFinalize(&keyInfoCtx);
-
-        if(xmlSecKeyIsValid(key)) {
-            ret = xmlSecNssKeysStoreAdoptKey(store, key);
-            if(ret < 0) {
-                xmlSecInternalError("xmlSecNssKeysStoreAdoptKey",
-                                    xmlSecKeyStoreGetName(store));
-                xmlSecKeyDestroy(key);
-                xmlFreeDoc(doc);
-                return(-1);
-            }
-        } else {
-            /* we have an unknown key in our file, just ignore it */
-            xmlSecKeyDestroy(key);
-        }
-        cur = xmlSecGetNextElementNode(cur->next);
-    }
-
-    if(cur != NULL) {
-        xmlSecUnexpectedNodeError(cur, xmlSecKeyStoreGetName(store));
-        xmlFreeDoc(doc);
-        return(-1);
-    }
-
-    xmlFreeDoc(doc);
-    return(0);
+    return(xmlSecSimpleKeysStoreLoad_ex(store, uri, keysMngr,
+        xmlSecNssKeysStoreAdoptKey));
 }
 
 /**
@@ -238,7 +146,7 @@ xmlSecNssKeysStoreSave(xmlSecKeyStorePtr store, const char *filename, xmlSecKeyD
     xmlSecAssert2(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId), -1);
     xmlSecAssert2((filename != NULL), -1);
 
-    ss = xmlSecNssKeysStoreGetSS(store);
+    ss = xmlSecNssKeysStoreGetCtx(store);
     xmlSecAssert2(((ss != NULL) && (*ss != NULL) &&
                    (xmlSecKeyStoreCheckId(*ss, xmlSecSimpleKeysStoreId))), -1);
 
@@ -251,7 +159,7 @@ xmlSecNssKeysStoreInitialize(xmlSecKeyStorePtr store) {
 
     xmlSecAssert2(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId), -1);
 
-    ss = xmlSecNssKeysStoreGetSS(store);
+    ss = xmlSecNssKeysStoreGetCtx(store);
     xmlSecAssert2(((ss == NULL) || (*ss == NULL)), -1);
 
     *ss = xmlSecKeyStoreCreate(xmlSecSimpleKeysStoreId);
@@ -270,7 +178,7 @@ xmlSecNssKeysStoreFinalize(xmlSecKeyStorePtr store) {
 
     xmlSecAssert(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId));
 
-    ss = xmlSecNssKeysStoreGetSS(store);
+    ss = xmlSecNssKeysStoreGetCtx(store);
     xmlSecAssert((ss != NULL) && (*ss != NULL));
 
     xmlSecKeyStoreDestroy(*ss);
@@ -293,7 +201,7 @@ xmlSecNssKeysStoreFindKey(xmlSecKeyStorePtr store, const xmlChar* name,
     xmlSecAssert2(xmlSecKeyStoreCheckId(store, xmlSecNssKeysStoreId), NULL);
     xmlSecAssert2(keyInfoCtx != NULL, NULL);
 
-    ss = xmlSecNssKeysStoreGetSS(store);
+    ss = xmlSecNssKeysStoreGetCtx(store);
     xmlSecAssert2(((ss != NULL) && (*ss != NULL)), NULL);
 
     key = xmlSecKeyStoreFindKey(*ss, name, keyInfoCtx);
@@ -382,7 +290,7 @@ xmlSecNssKeysStoreFindKey(xmlSecKeyStorePtr store, const xmlChar* name,
         ret = xmlSecKeySetValue(key, data);
         if (ret < 0) {
             xmlSecInternalError("xmlSecKeySetValue",
-				xmlSecKeyDataGetName(data));
+                xmlSecKeyDataGetName(data));
             goto done;
         }
         data = NULL;

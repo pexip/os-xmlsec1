@@ -95,15 +95,15 @@ do
     ;;
 
     --version)
-        echo 1.2.31
+        echo 1.2.36
         exit 0
     ;;
-    
+
     --crypto)
         echo openssl
         exit 0
     ;;
-    
+
     --help)
         usage 0
     ;;
@@ -115,7 +115,7 @@ do
     --libs)
            libs=true
     ;;
-    
+
     *)
         usage 1
     ;;
@@ -136,10 +136,10 @@ the_xml_libs="`xml2-config --libs`"
 the_xslt_flags=""
 the_xslt_libs=""
 if test "0" = "0" ;
-then 
+then
     the_xslt_flags="`xslt-config --cflags`"
     the_xslt_libs="`xslt-config --libs`"
-fi    
+fi
 
 #
 # Get crypto library settings
@@ -157,12 +157,12 @@ none)
     fi
     ;;
 
-default) 
+default)
     the_crypto_flags=" -DXMLSEC_CRYPTO_OPENSSL=1"
     the_crypto_libs="-lssl -lcrypto"
     the_xmlsec_crypto_lib="-lxmlsec1-openssl"
     ;;
-    
+
 openssl)
     if test "0" = "0" ;
     then
@@ -200,22 +200,22 @@ gcrypt)
     ;;
 
 nss)
-    if test "0" = "0";
+    if test "1" = "0";
     then
-        the_crypto_flags="-I/usr/include/nss -I/usr/include/nspr -I/usr/include/nspr -DXMLSEC_CRYPTO_NSS=1"
-        the_crypto_libs="-lnss3 -lnssutil3 -lsmime3 -lssl3 -lplds4 -lplc4 -lnspr4 -lplds4 -lplc4 -lnspr4"
+        the_crypto_flags=" -I/usr/include -I/usr/include/nss"
+        the_crypto_libs=" -Wl,-rpath-link -Wl,/usr/lib/i386-linux-gnu -L/usr/lib/i386-linux-gnu/lib -lnss3 -lsmime3"
         the_xmlsec_crypto_lib="-lxmlsec1-nss"
     else
         echo "Error: the \"$crypto\" cryptographic library is not supported"
         usage 1
     fi
     ;;
-    
+
 *)
     echo "Error: the \"$crypto\" cryptographic library is not supported"
     usage 1
     ;;
-    
+
 esac
 
 #
@@ -252,13 +252,13 @@ for i in $all_flags; do
     *)
         case " $other_flags " in
         *\ $i\ *)
-            # already there 
+            # already there
         ;;
         *)
             # add it to output
             other_flags="$other_flags $i"
         ;;
-        esac 
+        esac
     ;;
     esac
 done
@@ -271,7 +271,7 @@ for i in $rev_libs; do
     ;;
     *)
         # add it to output in reverse order
-        ord_libs="$i $ord_libs" 
+        ord_libs="$i $ord_libs"
     ;;
     esac
 done

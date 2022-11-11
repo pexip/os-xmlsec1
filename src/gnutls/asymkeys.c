@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2010-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:asymkeys
@@ -22,7 +22,6 @@
 #include <gnutls/x509.h>
 
 #include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/base64.h>
 #include <xmlsec/keyinfo.h>
@@ -30,6 +29,8 @@
 #include <xmlsec/errors.h>
 
 #include <xmlsec/gnutls/crypto.h>
+
+#include "../cast_helpers.h"
 
 /**************************************************************************
  *
@@ -61,7 +62,7 @@ static int xmlSecGnuTLSConvertParamsToMpis(gnutls_datum_t * params, xmlSecSize p
                                            gcry_mpi_t * mpis, xmlSecSize mpisNum) {
 
     xmlSecSize ii;
-    int rc;
+    gcry_error_t rc;
 
     xmlSecAssert2(params != NULL, -1);
     xmlSecAssert2(mpis != NULL, -1);
@@ -110,7 +111,7 @@ xmlSecGnuTLSKeyDataDsaAdoptPrivateKey(xmlSecKeyDataPtr data, gnutls_x509_privkey
     gcry_mpi_t mpis[5];
     gcry_sexp_t priv_key = NULL;
     gcry_sexp_t pub_key = NULL;
-    int rc;
+    gcry_error_t rc;
     int err;
     int ret;
 
@@ -195,7 +196,7 @@ xmlSecGnuTLSKeyDataDsaAdoptPublicKey(xmlSecKeyDataPtr data,
     gnutls_datum_t params[4];
     gcry_mpi_t mpis[4];
     gcry_sexp_t pub_key = NULL;
-    int rc;
+    gcry_error_t rc;
     int ret;
 
     xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecGnuTLSKeyDataDsaId), -1);
@@ -278,7 +279,7 @@ xmlSecGnuTLSKeyDataRsaAdoptPrivateKey(xmlSecKeyDataPtr data, gnutls_x509_privkey
     gcry_mpi_t mpis[6];
     gcry_sexp_t priv_key = NULL;
     gcry_sexp_t pub_key = NULL;
-    int rc;
+    gcry_error_t rc;
     int err;
     int ret;
 
@@ -308,7 +309,7 @@ xmlSecGnuTLSKeyDataRsaAdoptPrivateKey(xmlSecKeyDataPtr data, gnutls_x509_privkey
 
     /* Convert from OpenSSL parameter ordering to the OpenPGP order. */
     /* (http://gnupg.10057.n7.nabble.com/RSA-PKCS-1-signing-differs-from-OpenSSL-s-td27920.html) */
-    /* First check that p < q; if not swap p and q and recompute u.  */ 
+    /* First check that p < q; if not swap p and q and recompute u.  */
     if (gcry_mpi_cmp(mpis[3], mpis[4]) > 0) {
         gcry_mpi_swap(mpis[3], mpis[4]);
         gcry_mpi_invm(mpis[5], mpis[3], mpis[4]);
@@ -363,7 +364,7 @@ xmlSecGnuTLSKeyDataRsaAdoptPublicKey(xmlSecKeyDataPtr data,
     gnutls_datum_t params[2];
     gcry_mpi_t mpis[2];
     gcry_sexp_t pub_key = NULL;
-    int rc;
+    gcry_error_t rc;
     int ret;
 
     xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecGnuTLSKeyDataRsaId), -1);

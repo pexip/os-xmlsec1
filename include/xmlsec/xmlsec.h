@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_H__
 #define __XMLSEC_H__
@@ -33,6 +33,21 @@ extern "C" {
  */
 typedef void*                                   xmlSecPtr;
 
+
+/**
+ * XMLSEC_SIZE_T_FMT:
+ *
+ * The only reason we need this is that MinGW doesn't recognize "%zu"
+ * despite the fact that MSVC runtime supports it for 10+ years.
+ */
+#if defined(__MINGW64__)
+#define XMLSEC_SIZE_T_FMT                      "%llu"
+#elif defined(__MINGW32__)
+#define XMLSEC_SIZE_T_FMT                      "%lu"
+#else /*defined(__MINGW32__) */
+#define XMLSEC_SIZE_T_FMT                      "%zu"
+#endif /* defined(__MINGW32__) */
+
 /**
  * xmlSecSize:
  *
@@ -41,15 +56,21 @@ typedef void*                                   xmlSecPtr;
  */
 #ifdef XMLSEC_NO_SIZE_T
 #define xmlSecSize                              unsigned int
+#define XMLSEC_SIZE_MAX                         UINT_MAX
+#define XMLSEC_SIZE_FMT                         "%u"
 #else  /* XMLSEC_NO_SIZE_T */
 #define xmlSecSize                              size_t
+#define XMLSEC_SIZE_MAX                         SIZE_MAX
+#define XMLSEC_SIZE_FMT                         XMLSEC_SIZE_T_FMT
 #endif /* XMLSEC_NO_SIZE_T */
+#define XMLSEC_SIZE_MIN                         ((xmlSecSize)0)
 
 /**
  * XMLSEC_SIZE_BAD_CAST:
  * @val:        the value to cast
  *
- * Bad cast to xmlSecSize
+ * Bad cast to xmlSecSize. This macro is deprecated and will be removed in the future
+ * versions of LibXMLSec.
  */
 #define XMLSEC_SIZE_BAD_CAST(val)               ((xmlSecSize)(val))
 
@@ -87,6 +108,7 @@ XMLSEC_EXPORT int                               xmlSecInit              (void);
 XMLSEC_EXPORT int                               xmlSecShutdown          (void);
 XMLSEC_EXPORT const xmlChar *                   xmlSecGetDefaultCrypto  (void);
 XMLSEC_EXPORT void                              xmlSecSetExternalEntityLoader (xmlExternalEntityLoader);
+XMLSEC_EXPORT xmlSecSize                        xmlSecStrlen            (const xmlChar * str);
 
 /**
  * XMLSEC_CRYPTO:
@@ -101,18 +123,20 @@ XMLSEC_EXPORT void                              xmlSecSetExternalEntityLoader (x
 /*
  * XMLSEC_DEPRECATED function definition
  */
-#if !defined(IN_XMLSEC)
-#ifdef __GNUC__
+#if !defined(IN_XMLSEC) && !defined(IN_XMLSEC_CRYPTO)
+#if defined(__GNUC__)
+#define XMLSEC_DEPRECATED __attribute__((deprecated))
+#elif defined(__clang__)
 #define XMLSEC_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
 #define XMLSEC_DEPRECATED __declspec(deprecated)
 #else /* defined(_MSC_VER) */
-#pragma message("WARNING: You need to implement XMLSEC_DEPRECATED for this compiler")
+#warning "WARNING: You need to implement XMLSEC_DEPRECATED for this compiler"
 #define XMLSEC_DEPRECATED
 #endif /* defined(_MSC_VER) */
-#else  /* !defined(IN_XMLSEC) */
+#else  /* !defined(IN_XMLSEC) && !defined(IN_XMLSEC_CRYPTO) */
 #define XMLSEC_DEPRECATED
-#endif /* !defined(IN_XMLSEC) */
+#endif /* !defined(IN_XMLSEC) && !defined(IN_XMLSEC_CRYPTO) */
 
 /***********************************************************************
  *

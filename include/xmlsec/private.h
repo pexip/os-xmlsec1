@@ -7,13 +7,13 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_PRIVATE_H__
 #define __XMLSEC_PRIVATE_H__
 
 #ifndef XMLSEC_PRIVATE
-#error "xmlsec/private.h file contains private xmlsec definitions and should not be used outside xmlsec or xmlsec-$crypto libraries"
+#error "this file contains private xmlsec definitions and should not be used outside xmlsec or xmlsec-$crypto libraries"
 #endif /* XMLSEC_PRIVATE */
 
 #include <libxml/tree.h>
@@ -31,9 +31,9 @@
 #endif
 #endif
 
-#ifdef WIN32
+#if defined(XMLSEC_WINDOWS)
 #include <windows.h>
-#endif
+#endif /* defined(XMLSEC_WINDOWS) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -521,11 +521,12 @@ struct _xmlSecCryptoDLFunctions {
 
 /**
  * UNREFERENCED_PARAMETER:
+ * @param:    the parameter without references.
  *
- * Macro used to signal to MSVC unused function parameters
+ * Macro used to signal unused function parameters
  */
 #ifndef UNREFERENCED_PARAMETER
-#define UNREFERENCED_PARAMETER(x)
+#define UNREFERENCED_PARAMETER(param)   ((void)(param))
 #endif /* UNREFERENCED_PARAMETER */
 
 /***********************************************************************

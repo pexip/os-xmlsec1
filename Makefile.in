@@ -203,8 +203,8 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/xmlsec-gnutls.pc.in $(srcdir)/xmlsec-nss.pc.in \
 	$(srcdir)/xmlsec-openssl.pc.in $(srcdir)/xmlsec.pc.in \
 	$(srcdir)/xmlsec.spec.in $(srcdir)/xmlsecConf.sh.in AUTHORS \
-	COPYING ChangeLog INSTALL NEWS README TODO compile \
-	config.guess config.sub depcomp install-sh ltmain.sh missing
+	COPYING ChangeLog INSTALL NEWS TODO compile config.guess \
+	config.sub depcomp install-sh ltmain.sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -342,6 +342,7 @@ OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
 OPENSSL_CRYPTO_LIB = @OPENSSL_CRYPTO_LIB@
 OPENSSL_LIBS = @OPENSSL_LIBS@
 OPENSSL_MIN_VERSION = @OPENSSL_MIN_VERSION@
+OPENSSL_TEST_CONFIG = @OPENSSL_TEST_CONFIG@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -520,6 +521,7 @@ EXTRA_DIST = \
 	ChangeLog \
 	Copyright \
 	HACKING \
+	README.md \
 	xmlsec-openssl.pc.in \
 	xmlsec-nss.pc.in\
 	xmlsec-gnutls.pc.in \
@@ -540,15 +542,18 @@ EXTRA_CLEAN = \
 
 ABS_SRCDIR = @abs_srcdir@
 ABS_BUILDDIR = @abs_builddir@
+XMLSEC_OPENSSL_TEST_CONFIG = @OPENSSL_TEST_CONFIG@
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@PRECHECK_COMMANDS = \
-@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	export LD_LIBRARY_PATH="$(ABS_BUILDDIR)/src/.libs:$$LD_LIBRARY_PATH" ; \
+@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	export XMLSEC_OPENSSL_TEST_CONFIG="$(XMLSEC_OPENSSL_TEST_CONFIG)" && \
+@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	export LD_LIBRARY_PATH="$(ABS_BUILDDIR)/src/.libs:$$LD_LIBRARY_PATH" && \
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	for i in $(XMLSEC_CRYPTO_LIST) ; do \
-@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	    export LTDL_LIBRARY_PATH="$(ABS_BUILDDIR)/src/$$i/.libs:$$LTDL_LIBRARY_PATH" ; \
+@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@		export LTDL_LIBRARY_PATH="$(ABS_BUILDDIR)/src/$$i/.libs:$$LTDL_LIBRARY_PATH" ; \
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	done && \
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	cd $(ABS_SRCDIR) \
-@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	$(NULL)	
+@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_FALSE@	$(NULL)
 
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_TRUE@PRECHECK_COMMANDS = \
+@XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_TRUE@	export XMLSEC_OPENSSL_TEST_CONFIG="$(XMLSEC_OPENSSL_TEST_CONFIG)" && \
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_TRUE@	cd $(ABS_SRCDIR) \
 @XMLSEC_NO_APPS_CRYPTO_DYNAMIC_LOADING_TRUE@	$(NULL)
 
@@ -1167,42 +1172,42 @@ uninstall-am: uninstall-binSCRIPTS uninstall-confexecDATA \
 docs: docs-man
 	@(cd docs && $(MAKE) docs)
 
-docs-clean: 
+docs-clean:
 	@(cd docs && $(MAKE) clean)
 
-docs-man: 
+docs-man:
 	@(cd man && $(MAKE) docs)
 
 check: check-all check-info
 
-check-all: $(TEST_APP) 
+check-all: $(TEST_APP)
 	for crypto in $(CHECK_CRYPTO_LIST) ; do \
 		make check-crypto-$$crypto || exit 1 ; \
 	done
 
-check-crypto-%: $(TEST_APP) 
+check-crypto-%: $(TEST_APP)
 	@($(PRECHECK_COMMANDS) && \
-    echo "=================== Checking xmlsec-$* =================================" && \
-    $(SHELL) ./tests/testrun.sh \
-        $(ABS_SRCDIR)/tests/testKeys.sh \
-        $* \
-        $(ABS_SRCDIR)/tests \
-        $(ABS_BUILDDIR)/$(TEST_APP) der \
-    && \
-    $(SHELL) ./tests/testrun.sh \
-        $(ABS_SRCDIR)/tests/testDSig.sh \
-        $* \
-        $(ABS_SRCDIR)/tests \
-        $(ABS_BUILDDIR)/$(TEST_APP) \
-        der \
-    && \
-    $(SHELL) ./tests/testrun.sh \
-        $(ABS_SRCDIR)/tests/testEnc.sh \
-        $* \
-        $(ABS_SRCDIR)/tests \
-        $(ABS_BUILDDIR)/$(TEST_APP) \
-        der \
-    ; \
+	echo "=================== Checking xmlsec-$* =================================" && \
+	$(SHELL) ./tests/testrun.sh \
+		$(ABS_SRCDIR)/tests/testKeys.sh \
+		$* \
+		$(ABS_SRCDIR)/tests \
+		$(ABS_BUILDDIR)/$(TEST_APP) der \
+	&& \
+	$(SHELL) ./tests/testrun.sh \
+		$(ABS_SRCDIR)/tests/testDSig.sh \
+		$* \
+		$(ABS_SRCDIR)/tests \
+		$(ABS_BUILDDIR)/$(TEST_APP) \
+		der \
+	&& \
+	$(SHELL) ./tests/testrun.sh \
+		$(ABS_SRCDIR)/tests/testEnc.sh \
+		$* \
+		$(ABS_SRCDIR)/tests \
+		$(ABS_BUILDDIR)/$(TEST_APP) \
+		der \
+	; \
 	)
 
 check-info:
@@ -1222,7 +1227,7 @@ check-keys: $(TEST_APP)
 	    der \
 	)
 
-check-dsig: $(TEST_APP) 	
+check-dsig: $(TEST_APP)
 	@($(PRECHECK_COMMANDS) && \
 	$(SHELL) ./tests/testrun.sh \
 	    $(ABS_SRCDIR)/tests/testDSig.sh \
@@ -1232,7 +1237,7 @@ check-dsig: $(TEST_APP)
 	    der \
 	)
 
-check-enc: $(TEST_APP) 
+check-enc: $(TEST_APP)
 	@($(PRECHECK_COMMANDS) && \
 	$(SHELL) ./tests/testrun.sh \
 	    $(ABS_SRCDIR)/tests/testEnc.sh  \
@@ -1252,6 +1257,9 @@ memcheck-res:
 
 memcheck: $(TEST_APP)
 	@(export DEBUG_MEMORY=1 && $(MAKE) check && $(MAKE) memcheck-res)
+
+memcheck-crypto-%: $(TEST_APP)
+	@(export DEBUG_MEMORY=1 && $(MAKE) check-crypto-$* && $(MAKE) memcheck-res)
 
 perfcheck: $(TEST_APP)
 	@(export PERF_TEST=10 && $(MAKE) check)

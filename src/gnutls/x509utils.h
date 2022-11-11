@@ -7,7 +7,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2010-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_GNUTLS_X509UTILS_H__
 #define __XMLSEC_GNUTLS_X509UTILS_H__
@@ -50,12 +50,13 @@ xmlChar *               xmlSecGnuTLSX509CertGetSubjectDN        (gnutls_x509_crt
 xmlChar *               xmlSecGnuTLSX509CertGetIssuerDN         (gnutls_x509_crt_t cert);
 xmlChar *               xmlSecGnuTLSX509CertGetIssuerSerial     (gnutls_x509_crt_t cert);
 xmlChar *               xmlSecGnuTLSX509CertGetSKI              (gnutls_x509_crt_t cert);
+
+
 gnutls_x509_crt_t       xmlSecGnuTLSX509CertRead                (const xmlSecByte* buf,
                                                                  xmlSecSize size,
                                                                  xmlSecKeyDataFormat format);
-gnutls_x509_crt_t       xmlSecGnuTLSX509CertBase64DerRead       (xmlChar* buf);
-xmlChar*                xmlSecGnuTLSX509CertBase64DerWrite      (gnutls_x509_crt_t cert,
-                                                                 int base64LineWrap);
+int                     xmlSecGnuTLSX509CertDerWrite            (gnutls_x509_crt_t cert,
+                                                                 xmlSecBufferPtr buf);
 void                    xmlSecGnuTLSX509CertDebugDump           (gnutls_x509_crt_t cert,
                                                                  FILE* output);
 void                    xmlSecGnuTLSX509CertDebugXmlDump        (gnutls_x509_crt_t cert,
@@ -71,9 +72,8 @@ xmlChar *               xmlSecGnuTLSX509CrlGetIssuerDN          (gnutls_x509_crl
 gnutls_x509_crl_t       xmlSecGnuTLSX509CrlRead                 (const xmlSecByte* buf,
                                                                  xmlSecSize size,
                                                                  xmlSecKeyDataFormat format);
-gnutls_x509_crl_t       xmlSecGnuTLSX509CrlBase64DerRead        (xmlChar* buf);
-xmlChar*                xmlSecGnuTLSX509CrlBase64DerWrite       (gnutls_x509_crl_t crl,
-                                                                 int base64LineWrap);
+int                     xmlSecGnuTLSX509CrlDerWrite             (gnutls_x509_crl_t crl,
+                                                                 xmlSecBufferPtr buf);
 void                    xmlSecGnuTLSX509CrlDebugDump            (gnutls_x509_crl_t crl,
                                                                  FILE* output);
 void                    xmlSecGnuTLSX509CrlDebugXmlDump         (gnutls_x509_crl_t crl,
@@ -84,7 +84,7 @@ void                    xmlSecGnuTLSX509CrlDebugXmlDump         (gnutls_x509_crl
  * Misc. utils/helpers
  *
  ************************************************************************/
-xmlChar*                xmlSecGnuTLSASN1IntegerWrite            (const unsigned char * data, 
+xmlChar*                xmlSecGnuTLSASN1IntegerWrite            (const unsigned char * data,
                                                                  size_t len);
 
 

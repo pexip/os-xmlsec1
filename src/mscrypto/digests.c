@@ -30,7 +30,9 @@
 #include <xmlsec/errors.h>
 
 #include <xmlsec/mscrypto/crypto.h>
+
 #include "private.h"
+#include "../cast_helpers.h"
 
 #define MSCRYPTO_MAX_HASH_SIZE 256
 
@@ -48,14 +50,9 @@ struct _xmlSecMSCryptoDigestCtx {
  *
  * MSCrypto Digest transforms
  *
- * xmlSecMSCryptoDigestCtx is located after xmlSecTransform
- *
  *****************************************************************************/
-#define xmlSecMSCryptoDigestSize        \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecMSCryptoDigestCtx))
-#define xmlSecMSCryptoDigestGetCtx(transform) \
-    ((xmlSecMSCryptoDigestCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
-
+XMLSEC_TRANSFORM_DECLARE(MSCryptoDigest, xmlSecMSCryptoDigestCtx)
+#define xmlSecMSCryptoDigestSize XMLSEC_TRANSFORM_SIZE(MSCryptoDigest)
 
 static int      xmlSecMSCryptoDigestInitialize  (xmlSecTransformPtr transform);
 static void     xmlSecMSCryptoDigestFinalize    (xmlSecTransformPtr transform);
@@ -345,55 +342,43 @@ xmlSecMSCryptoDigestExecute(xmlSecTransformPtr transform,
 
         inSize = xmlSecBufferGetSize(in);
         if(inSize > 0) {
-            ret = CryptHashData(ctx->mscHash,
-                xmlSecBufferGetData(in),
-                inSize,
-                0);
+            DWORD dwInSize;
 
+            XMLSEC_SAFE_CAST_SIZE_TO_ULONG(inSize, dwInSize, return(-1), xmlSecTransformGetName(transform));
+            ret = CryptHashData(ctx->mscHash, xmlSecBufferGetData(in), dwInSize, 0);
             if(ret == 0) {
-                xmlSecMSCryptoError2("CryptHashData",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", inSize);
+                xmlSecMSCryptoError2("CryptHashData", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, inSize);
                 return(-1);
             }
 
             ret = xmlSecBufferRemoveHead(in, inSize);
             if(ret < 0) {
-                xmlSecInternalError2("xmlSecBufferRemoveHead",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", inSize);
+                xmlSecInternalError2("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform),
+                    "size=" XMLSEC_SIZE_FMT, inSize);
                 return(-1);
             }
         }
         if(last) {
-            /* TODO: make a MSCrypto compatible assert here */
-            /* xmlSecAssert2((xmlSecSize)EVP_MD_size(ctx->digest) <= sizeof(ctx->dgst), -1); */
-            DWORD retLen;
-            retLen = MSCRYPTO_MAX_HASH_SIZE;
-
+            DWORD retLen = MSCRYPTO_MAX_HASH_SIZE;
             ret = CryptGetHashParam(ctx->mscHash,
                                     HP_HASHVAL,
                                     ctx->dgst,
                                     &retLen,
                                     0);
             if (ret == 0) {
-                xmlSecMSCryptoError2("CryptGetHashParam(HP_HASHVAL)",
-                                     xmlSecTransformGetName(transform),
-                                     "size=%d", MSCRYPTO_MAX_HASH_SIZE);
+                xmlSecMSCryptoError("CryptGetHashParam(HP_HASHVAL)", xmlSecTransformGetName(transform));
                 return(-1);
             }
-
-            ctx->dgstSize = XMLSEC_SIZE_BAD_CAST(retLen);
-
-            xmlSecAssert2(ctx->dgstSize > 0, -1);
+            xmlSecAssert2(retLen > 0, -1);
+            XMLSEC_SAFE_CAST_ULONG_TO_SIZE(retLen, ctx->dgstSize, return(-1), xmlSecTransformGetName(transform));
 
             /* copy result to output */
             if(transform->operation == xmlSecTransformOperationSign) {
                 ret = xmlSecBufferAppend(out, ctx->dgst, ctx->dgstSize);
                 if(ret < 0) {
-                    xmlSecInternalError2("xmlSecBufferAppend",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", ctx->dgstSize);
+                    xmlSecInternalError2("xmlSecBufferAppend", xmlSecTransformGetName(transform),
+                        "size=" XMLSEC_SIZE_FMT, ctx->dgstSize);
                     return(-1);
                 }
             }

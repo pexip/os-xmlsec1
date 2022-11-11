@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:asn1
@@ -27,6 +27,7 @@
 #include <xmlsec/gcrypt/crypto.h>
 
 #include "asn1.h"
+#include "../cast_helpers.h"
 
 /**************************************************************************
  *
@@ -95,12 +96,12 @@ struct tag_info
    that the encoded length does not exhaust the length of the provided
    buffer. */
 static int
-xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct tag_info *ti)
+xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, unsigned long *buflen, struct tag_info *ti)
 {
-    int c;
+    unsigned long c;
     unsigned long tag;
     const xmlSecByte *buf;
-    xmlSecSize length;
+    unsigned long length;
 
     xmlSecAssert2(buffer != NULL, -1);
     xmlSecAssert2((*buffer) != NULL, -1);
@@ -119,7 +120,7 @@ xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct 
     if (length <= 0) {
         return(-1); /* Premature EOF.  */
     }
-    c = *buf++; 
+    c = *buf++;
     length--;
     ti->nhdr++;
 
@@ -134,7 +135,7 @@ xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct 
             if (length <= 0) {
                 return(-1); /* Premature EOF.  */
             }
-            c = *buf++; 
+            c = *buf++;
             length--;
             ti->nhdr++;
             tag |= (c & 0x7f);
@@ -146,7 +147,7 @@ xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct 
     if(length <= 0) {
         return -1; /* Premature EOF. */
     }
-    c = *buf++; 
+    c = *buf++;
     length--;
     ti->nhdr++;
 
@@ -157,7 +158,7 @@ xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct 
     } else if (c == 0xff) {
         return -1; /* Forbidden length value.  */
     } else {
-        xmlSecSize len = 0;
+        unsigned long len = 0;
         int count = c & 0x7f;
 
         for (; count; count--) {
@@ -187,10 +188,10 @@ xmlSecGCryptAsn1ParseTag (xmlSecByte const **buffer, xmlSecSize *buflen, struct 
 }
 
 static int
-xmlSecGCryptAsn1ParseIntegerSequence(xmlSecByte const **buffer, xmlSecSize *buflen,
+xmlSecGCryptAsn1ParseIntegerSequence(xmlSecByte const **buffer, xmlSecSize* buflen,
                                      gcry_mpi_t * params, int params_size) {
     const xmlSecByte *buf;
-    xmlSecSize length;
+    unsigned long length;
     struct tag_info ti;
     gcry_error_t err;
     int idx = 0;
@@ -204,14 +205,14 @@ xmlSecGCryptAsn1ParseIntegerSequence(xmlSecByte const **buffer, xmlSecSize *bufl
 
     /* initialize */
     buf = *buffer;
-    length = *buflen;
+    XMLSEC_SAFE_CAST_SIZE_TO_ULONG((*buflen), length, return(-1), NULL);
 
     /* read SEQUENCE */
     memset(&ti, 0, sizeof(ti));
     ret = xmlSecGCryptAsn1ParseTag (&buf, &length, &ti);
     if((ret != 0)  || (ti.tag != TAG_SEQUENCE) || ti.class || !ti.cons || ti.ndef) {
         xmlSecInternalError2("xmlSecGCryptAsn1ParseTag", NULL,
-                            "TAG_SEQUENCE is expected: tag=%d", (int)ti.tag);
+            "TAG_SEQUENCE is expected: tag=%lu", ti.tag);
         return(-1);
     }
 
@@ -222,8 +223,7 @@ xmlSecGCryptAsn1ParseIntegerSequence(xmlSecByte const **buffer, xmlSecSize *bufl
         if((ret != 0) || (ti.tag != TAG_INTEGER) || ti.class || ti.cons || ti.ndef)
         {
             xmlSecInternalError3("xmlSecGCryptAsn1ParseTag", NULL,
-                                 "TAG_INTEGER is expected - index=%d, tag=%d",
-                                 (int)idx, (int)ti.tag);
+                "TAG_INTEGER is expected - index=%d, tag=%lu", idx, ti.tag);
             return(-1);
         }
 
@@ -239,14 +239,13 @@ xmlSecGCryptAsn1ParseIntegerSequence(xmlSecByte const **buffer, xmlSecSize *bufl
     /* did we parse everything? */
     if(length > 0) {
         xmlSecInternalError3("xmlSecGCryptAsn1ParseTag", NULL,
-                             "too many params - cur=%d, expected=%d",
-                             (int)(idx - 1), (int)params_size);
+            "too many params - cur=%d, expected=%d", (idx - 1), params_size);
         return(-1);
     }
 
     /* done */
     *buffer = buf;
-    *buflen = length;
+    XMLSEC_SAFE_CAST_ULONG_TO_SIZE(length, (*buflen), return(-1), NULL);
     return(idx);
 }
 
@@ -258,7 +257,7 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
     gcry_sexp_t s_priv_key = NULL;
     gcry_error_t err;
     gcry_mpi_t keyparms[20];
-    int keyparms_num;
+    xmlSecSize keyparms_num;
     unsigned int idx;
     int ret;
 
@@ -275,50 +274,49 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
         xmlSecInternalError("xmlSecGCryptAsn1ParseIntegerSequence", NULL);
         goto done;
     }
-    keyparms_num = ret;
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(ret, keyparms_num, goto done, NULL);
 
     /* The value of the first integer should be 0. */
     if ((keyparms_num < 1) || (gcry_mpi_cmp_ui(keyparms[0], 0) != 0)) {
         xmlSecInternalError2("xmlSecGCryptAsn1ParseTag", NULL,
-                             "num=%d", (int)keyparms_num);
+            "num=" XMLSEC_SIZE_FMT, keyparms_num);
         goto done;
     }
 
     /* do we need to guess the key type? not robust but the best we can do */
     if(type == xmlSecGCryptDerKeyTypeAuto) {
         switch(keyparms_num) {
-        case 3:
+        case 3U:
             /* Public RSA */
             type = xmlSecGCryptDerKeyTypePublicRsa;
             break;
-        case 5:
+        case 5U:
             /* Public DSA */
             type = xmlSecGCryptDerKeyTypePublicDsa;
             break;
-        case 6:
+        case 6U:
             /* Private DSA */
             type = xmlSecGCryptDerKeyTypePrivateDsa;
             break;
-        case 9:
+        case 9U:
             /* Private RSA */
             type = xmlSecGCryptDerKeyTypePrivateRsa;
             break;
         default:
             /* unknown */
-            xmlSecInvalidIntegerDataError("keyparms_num", keyparms_num,
-                    "the number of parameters matching key type", NULL);
+            xmlSecInvalidSizeDataError("keyparms_num", keyparms_num,
+                "the number of parameters matching key type", NULL);
             goto done;
         }
     }
-
 
     switch(type) {
 #ifndef XMLSEC_NO_DSA
     case xmlSecGCryptDerKeyTypePrivateDsa:
         /* check we have enough params */
-        if(keyparms_num != 6) {
+        if(keyparms_num != 6U) {
             xmlSecInvalidSizeError("Private DSA key params",
-                                   keyparms_num, 6, NULL);
+                keyparms_num, (xmlSecSize)6U, NULL);
             goto done;
         }
 
@@ -367,9 +365,9 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
 
     case xmlSecGCryptDerKeyTypePublicDsa:
         /* check we have enough params */
-        if(keyparms_num != 5) {
+        if(keyparms_num != 5U) {
             xmlSecInvalidSizeError("Public DSA key params",
-                                   keyparms_num, 5, NULL);
+                keyparms_num, (xmlSecSize)5U, NULL);
             goto done;
         }
 
@@ -404,15 +402,15 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
 #ifndef XMLSEC_NO_RSA
     case xmlSecGCryptDerKeyTypePrivateRsa:
         /* check we have enough params */
-        if(keyparms_num != 9) {
+        if(keyparms_num != 9U) {
             xmlSecInvalidSizeError("Private RSA key params",
-                                   keyparms_num, 9, NULL);
+                (xmlSecSize)keyparms_num, (xmlSecSize)9U, NULL);
             goto done;
         }
 
         /* Convert from OpenSSL parameter ordering to the OpenPGP order. */
         /* (http://gnupg.10057.n7.nabble.com/RSA-PKCS-1-signing-differs-from-OpenSSL-s-td27920.html) */
-        /* First check that p < q; if not swap p and q and recompute u.  */ 
+        /* First check that p < q; if not swap p and q and recompute u.  */
         if (gcry_mpi_cmp (keyparms[4], keyparms[5]) > 0) {
             gcry_mpi_swap (keyparms[4], keyparms[5]);
             gcry_mpi_invm (keyparms[8], keyparms[4], keyparms[5]);
@@ -458,9 +456,9 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
 
     case xmlSecGCryptDerKeyTypePublicRsa:
         /* check we have enough params */
-        if(keyparms_num != 3) {
+        if(keyparms_num != 3U) {
             xmlSecInvalidSizeError("Public RSA key params",
-                                   keyparms_num, 3, NULL);
+                keyparms_num, (xmlSecSize)3U, NULL);
             goto done;
         }
 
@@ -493,7 +491,7 @@ xmlSecGCryptParseDer(const xmlSecByte * der, xmlSecSize derlen,
 #endif /* XMLSEC_NO_RSA */
 
     default:
-        xmlSecInvalidIntegerTypeError("key_type", type, "supported key type", NULL);
+        xmlSecUnsupportedEnumValueError("key_type", type, NULL);
         goto done;
         break;
     }

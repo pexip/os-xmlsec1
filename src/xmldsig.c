@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:xmldsig
@@ -35,6 +35,8 @@
 #include <xmlsec/membuf.h>
 #include <xmlsec/xmldsig.h>
 #include <xmlsec/errors.h>
+
+#include "cast_helpers.h"
 
 /**************************************************************************
  *
@@ -273,6 +275,9 @@ xmlSecDSigCtxGetPreSignBuffer(xmlSecDSigCtxPtr dsigCtx) {
  */
 int
 xmlSecDSigCtxSign(xmlSecDSigCtxPtr dsigCtx, xmlNodePtr tmpl) {
+    xmlSecByte* outBuf;
+    xmlSecSize outSize;
+    int outLen;
     int ret;
 
     xmlSecAssert2(dsigCtx != NULL, -1);
@@ -307,9 +312,10 @@ xmlSecDSigCtxSign(xmlSecDSigCtxPtr dsigCtx, xmlNodePtr tmpl) {
     }
 
     /* write signed data to xml */
-    xmlNodeSetContentLen(dsigCtx->signValueNode,
-                            xmlSecBufferGetData(dsigCtx->result),
-                            xmlSecBufferGetSize(dsigCtx->result));
+    outBuf = xmlSecBufferGetData(dsigCtx->result);
+    outSize = xmlSecBufferGetSize(dsigCtx->result);
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(outSize, outLen, return(-1), NULL);
+    xmlNodeSetContentLen(dsigCtx->signValueNode, outBuf, outLen);
 
     /* set success status and we are done */
     dsigCtx->status = xmlSecDSigStatusSucceeded;
@@ -1412,15 +1418,20 @@ xmlSecDSigReferenceCtxProcessNode(xmlSecDSigReferenceCtxPtr dsigRefCtx, xmlNodeP
     dsigRefCtx->result = transformCtx->result;
 
     if(dsigRefCtx->dsigCtx->operation == xmlSecTransformOperationSign) {
+        xmlSecByte* outBuf;
+        xmlSecSize outSize;
+        int outLen;
+
         if((dsigRefCtx->result == NULL) || (xmlSecBufferGetData(dsigRefCtx->result) == NULL)) {
             xmlSecInternalError("xmlSecTransformCtxExecute", NULL);
             return(-1);
         }
 
         /* write signed data to xml */
-        xmlNodeSetContentLen(digestValueNode,
-                            xmlSecBufferGetData(dsigRefCtx->result),
-                            xmlSecBufferGetSize(dsigRefCtx->result));
+        outBuf = xmlSecBufferGetData(dsigRefCtx->result);
+        outSize = xmlSecBufferGetSize(dsigRefCtx->result);
+        XMLSEC_SAFE_CAST_SIZE_TO_INT(outSize, outLen, return(-1), NULL);
+        xmlNodeSetContentLen(digestValueNode, outBuf, outLen);
 
         /* set success status and we are done */
         dsigRefCtx->status = xmlSecDSigStatusSucceeded;

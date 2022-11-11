@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:templates
@@ -1462,11 +1462,12 @@ xmlSecTmplTransformAddHmacOutputLength(xmlNodePtr transformNode, xmlSecSize bits
         return(-1);
     }
 
-#ifdef WIN32
-    sprintf_s(buf, sizeof(buf), "%lu", (unsigned long)bitsLen);
-#else  /* WIN32 */
-    sprintf(buf, "%lu", (unsigned long)bitsLen);
-#endif /* WIN32 */
+#if defined(_MSC_VER)
+    sprintf_s(buf, sizeof(buf), XMLSEC_SIZE_FMT, bitsLen);
+#else  /* defined(_MSC_VER) */
+    sprintf(buf, XMLSEC_SIZE_FMT, bitsLen);
+#endif /* defined(_MSC_VER) */
+
     xmlNodeSetContent(cur, BAD_CAST buf);
     return(0);
 }
@@ -1505,7 +1506,7 @@ xmlSecTmplTransformAddRsaOaepParam(xmlNodePtr transformNode,
 
     base64 = xmlSecBase64Encode(buf, size, 0);
     if(base64 == NULL) {
-        xmlSecInternalError2("xmlSecBase64Encode", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBase64Encode", NULL, "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 

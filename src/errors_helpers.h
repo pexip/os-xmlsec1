@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 
 #ifndef __XMLSEC_ERROR_HELPERS_H__
@@ -109,7 +109,7 @@ extern "C" {
                     (const char*)(errorObject),             \
                     "xmlMalloc",                            \
                     XMLSEC_ERRORS_R_MALLOC_FAILED,          \
-                    "size=%lu", (unsigned long)(allocSize)  \
+                    "size=" XMLSEC_SIZE_T_FMT, (size_t)(allocSize) \
         )
 
 /**
@@ -124,7 +124,7 @@ extern "C" {
                     (const char*)(errorObject),             \
                     "xmlStrdup",                            \
                     XMLSEC_ERRORS_R_STRDUP_FAILED,          \
-                    "size=%lu", (unsigned long)xmlStrlen(str) \
+                    "size=%d", xmlStrlen(str)               \
         )
 
 /**
@@ -143,9 +143,8 @@ extern "C" {
                    (const char*)(errorObject),        \
                    (errorFunction),                   \
                    XMLSEC_ERRORS_R_XML_FAILED,        \
-                   "xml error: %lu: %s",              \
-                   (unsigned long)code,               \
-                   xmlSecErrorsSafeString(message)    \
+                   "xml error: %d: %s",               \
+                   code, xmlSecErrorsSafeString(message) \
         );                                            \
     }
 
@@ -167,10 +166,8 @@ extern "C" {
                    (const char*)(errorObject),        \
                    (errorFunction),                   \
                    XMLSEC_ERRORS_R_XML_FAILED,        \
-                   msg "; xml error: %lu: %s",        \
-                   (param),                           \
-                   (unsigned long)code,               \
-                   xmlSecErrorsSafeString(message)    \
+                   msg "; xml error: %d: %s",        \
+                   (param), code, xmlSecErrorsSafeString(message) \
         );                                            \
     }
 
@@ -191,9 +188,8 @@ extern "C" {
                    (const char*)(errorObject),        \
                    (errorFunction),                   \
                    XMLSEC_ERRORS_R_XML_FAILED,        \
-                   "xml error: %lu: %s",              \
-                   (unsigned long)code,               \
-                   xmlSecErrorsSafeString(message)    \
+                   "xml error: %d: %s",               \
+                   code, xmlSecErrorsSafeString(message) \
         );                                            \
     }
 
@@ -216,10 +212,8 @@ extern "C" {
                    (const char*)(errorObject),        \
                    (errorFunction),                   \
                    XMLSEC_ERRORS_R_XML_FAILED,        \
-                   msg "; xml error: %lu: %s",        \
-                   (param),                           \
-                   (unsigned long)code,               \
-                   xmlSecErrorsSafeString(message)    \
+                   msg "; xml error: %d: %s",         \
+                   (param), code, xmlSecErrorsSafeString(message) \
         );                                            \
     }
 
@@ -240,9 +234,8 @@ extern "C" {
                    (const char*)(errorObject),        \
                    (errorFunction),                   \
                    XMLSEC_ERRORS_R_XSLT_FAILED,       \
-                   "xslt error: %lu: %s",             \
-                   (unsigned long)code,               \
-                   xmlSecErrorsSafeString(message)    \
+                   "xslt error: %d: %s",              \
+                   code, xmlSecErrorsSafeString(message) \
         );                                            \
     }
 
@@ -295,10 +288,10 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_SIZE,           \
-                    "invalid size for '%s': actual=%lu is not equal to expected=%lu", \
+                    "invalid size for '%s': actual=" XMLSEC_SIZE_FMT " is not equal to expected=" XMLSEC_SIZE_FMT, \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
-                    (unsigned long)(expected)               \
+                    (actual),                               \
+                    (expected)                              \
         )
 
 /**
@@ -316,10 +309,10 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_SIZE,           \
-                    "invalid size for '%s': actual=%lu is less than expected=%lu", \
+                    "invalid size for '%s': actual=" XMLSEC_SIZE_FMT " is less than expected=" XMLSEC_SIZE_FMT, \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
-                    (unsigned long)(expected)               \
+                    (actual),                               \
+                    (expected)                              \
         )
 
 /**
@@ -337,10 +330,10 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_NOT_IMPLEMENTED,        \
-                    "invalid size for '%s': actual=%lu is more than expected=%lu", \
+                    "invalid size for '%s': actual=" XMLSEC_SIZE_FMT " is more than expected=" XMLSEC_SIZE_FMT, \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
-                    (unsigned long)(expected)               \
+                    (actual),                               \
+                    (expected)                              \
         )
 
 /**
@@ -358,10 +351,10 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_NOT_IMPLEMENTED,        \
-                    "invalid size for '%s': actual=%lu is not a multiple of %lu", \
+                    "invalid size for '%s': actual=" XMLSEC_SIZE_FMT " is not a multiple of " XMLSEC_SIZE_FMT, \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
-                    (unsigned long)(divider)               \
+                    (actual),                               \
+                    (divider)                               \
         )
 
 /**
@@ -400,7 +393,7 @@ extern "C" {
 /**
  * xmlSecInvalidStringDataError:
  * @name:               the name of the variable, parameter, etc.
- * @actual:             the actual value as a string.
+ * @actual:             the actual string value.
  * @expected:           the expected value(s) as a string.
  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
  *
@@ -420,7 +413,7 @@ extern "C" {
 /**
  * xmlSecInvalidIntegerDataError:
  * @name:               the name of the variable, parameter, etc.
- * @actual:             the actual value as an integer.
+ * @actual:             the actual integer value.
  * @expected:           the expected value(s) as a string.
  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
  *
@@ -431,18 +424,18 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_DATA,           \
-                    "invalid data for '%s': actual=%ld and expected %s", \
+                    "invalid data for '%s': actual=%d and expected %s", \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
+                    (actual),                               \
                     (expected)                              \
         )
 
 /**
  * xmlSecInvalidIntegerDataError2:
  * @name1:              the name of the first variable, parameter, etc.
- * @actual1:            the actual first value as an integer.
+ * @actual1:            the actual first integer value.
  * @name2:              the name of the second variable, parameter, etc.
- * @actual2:            the actual second value as an integer.
+ * @actual2:            the actual second integer value.
  * @expected:           the expected value(s) as a string.
  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
  *
@@ -453,11 +446,55 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_DATA,           \
-                    "invalid data: actual value '%s'=%ld, actual value '%s'=%ld and expected %s", \
+                    "invalid data: actual value '%s'=%d, actual value '%s'=%d and expected %s", \
                     xmlSecErrorsSafeString(name1),          \
-                    (unsigned long)(actual1),               \
+                    (actual1),                              \
                     xmlSecErrorsSafeString(name2),          \
-                    (unsigned long)(actual2),               \
+                    (actual2),                              \
+                    (expected)                              \
+        )
+
+ /**
+  * xmlSecInvalidSizeDataError:
+  * @name:               the name of the variable, parameter, etc.
+  * @actual:             the actual xmlSecSize value.
+  * @expected:           the expected value(s) as a string.
+  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+  *
+  * Macro. The XMLSec library macro for reporting "invalid data" errors for xmlSecSize.
+  */
+#define xmlSecInvalidSizeDataError(name, actual, expected, errorObject) \
+        xmlSecError(XMLSEC_ERRORS_HERE,                     \
+                    (const char*)(errorObject),             \
+                    NULL,                                   \
+                    XMLSEC_ERRORS_R_INVALID_DATA,           \
+                    "invalid data for '%s': actual=" XMLSEC_SIZE_FMT " and expected %s", \
+                    xmlSecErrorsSafeString(name),           \
+                    (actual),                               \
+                    (expected)                              \
+        )
+
+/**
+ * xmlSecInvalidSizeDataError2:
+ * @name1:              the name of the first variable, parameter, etc.
+ * @actual1:            the actual first xmlSecSize value.
+ * @name2:              the name of the second variable, parameter, etc.
+ * @actual2:            the actual second xmlSecSize value.
+ * @expected:           the expected value(s) as a string.
+ * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+ *
+ * Macro. The XMLSec library macro for reporting "invalid data" errors for xmlSecSize.
+ */
+#define xmlSecInvalidSizeDataError2(name1, actual1, name2, actual2, expected, errorObject) \
+        xmlSecError(XMLSEC_ERRORS_HERE,                     \
+                    (const char*)(errorObject),             \
+                    NULL,                                   \
+                    XMLSEC_ERRORS_R_INVALID_DATA,           \
+                    "invalid data: actual value '%s'=" XMLSEC_SIZE_FMT ", actual value '%s'=" XMLSEC_SIZE_FMT " and expected %s", \
+                    xmlSecErrorsSafeString(name1),          \
+                    (actual1),                              \
+                    xmlSecErrorsSafeString(name2),          \
+                    (actual2),                              \
                     (expected)                              \
         )
 
@@ -500,7 +537,7 @@ extern "C" {
 /**
  * xmlSecInvalidIntegerTypeError:
  * @name:               the name of the variable, parameter, etc.
- * @actual:             the actual value as an integer.
+ * @actual:             the actual integer value.
  * @expected:           the expected value(s) as a string.
  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
  *
@@ -511,18 +548,18 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_TYPE,           \
-                    "invalid type for '%s': actual=%ld and expected %s", \
+                    "invalid type for '%s': actual=%d and expected %s", \
                     xmlSecErrorsSafeString(name),           \
-                    (unsigned long)(actual),                \
+                    (actual),                               \
                     (expected)                              \
         )
 
 /**
  * xmlSecInvalidIntegerTypeError2:
  * @name1:              the name of the first variable, parameter, etc.
- * @actual1:            the actual first value as an integer.
+ * @actual1:            the actual first integer value.
  * @name2:              the name of the second variable, parameter, etc.
- * @actual2:            the actual second value as an integer.
+ * @actual2:            the actual second integer value.
  * @expected:           the expected value(s) as a string.
  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
  *
@@ -533,13 +570,33 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_TYPE,           \
-                    "invalid type: actual value '%s'=%ld, actual value '%s'=%ld and expected %s", \
+                    "invalid type: actual value '%s'=%d, actual value '%s'=%d and expected %s", \
                     xmlSecErrorsSafeString(name1),          \
-                    (unsigned long)(actual1),               \
+                    (actual1),                              \
                     xmlSecErrorsSafeString(name2),          \
-                    (unsigned long)(actual2),               \
+                    (actual2),                              \
                     (expected)                              \
         )
+
+
+ /**
+  * xmlSecUnsupportedEnumValueError:
+  * @name:               the name of the variable, parameter, etc.
+  * @actual:             the actual value.
+  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+  *
+  * Macro. The XMLSec library macro for reporting "unsupported enum type" errors.
+  */
+#define xmlSecUnsupportedEnumValueError(name, actual, errorObject) \
+        xmlSecError(XMLSEC_ERRORS_HERE,                     \
+                    (const char*)(errorObject),             \
+                    NULL,                                   \
+                    XMLSEC_ERRORS_R_INVALID_TYPE,           \
+                    "unsupported value for '%s': " XMLSEC_ENUM_FMT, \
+                    xmlSecErrorsSafeString(name),           \
+                    XMLSEC_ENUM_CAST(actual)                \
+        )
+
 
 /**
  * xmlSecInvalidNodeError:
@@ -582,6 +639,53 @@ extern "C" {
                    xmlSecErrorsSafeString(reason)     \
         );                                            \
     }
+
+ /**
+  * xmlSecInvalidNodeContentError2:
+  * @node:               the node.
+  * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+  * @msg:                the extra message.
+  * @param:              the extra message param.
+  *
+  * Macro. The XMLSec library macro for reporting an invalid node content errors.
+  */
+#define xmlSecInvalidNodeContentError2(node, errorObject, msg, param) \
+    {                                                 \
+        const char* nName = xmlSecNodeGetName(node);  \
+        xmlSecError(XMLSEC_ERRORS_HERE,               \
+                   (const char*)(errorObject),        \
+                   NULL,                              \
+                   XMLSEC_ERRORS_R_INVALID_NODE_CONTENT, \
+                   msg "; node=%s",                   \
+                   (param),                           \
+                   xmlSecErrorsSafeString(nName)      \
+        );                                            \
+    }
+
+  /**
+   * xmlSecInvalidNodeContentError3:
+   * @node:               the node.
+   * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+   * @msg:                the extra message.
+   * @param1:             the extra message param1.
+   * @param2:             the extra message param2.
+   *
+   * Macro. The XMLSec library macro for reporting an invalid node content errors.
+   */
+#define xmlSecInvalidNodeContentError3(node, errorObject, msg, param1, param2) \
+    {                                                 \
+        const char* nName = xmlSecNodeGetName(node);  \
+        xmlSecError(XMLSEC_ERRORS_HERE,               \
+                   (const char*)(errorObject),        \
+                   NULL,                              \
+                   XMLSEC_ERRORS_R_INVALID_NODE_CONTENT, \
+                   msg "; node=%s",                   \
+                   (param1),                          \
+                   (param2),                          \
+                   xmlSecErrorsSafeString(nName)      \
+        );                                            \
+    }
+
 
 /**
  * xmlSecInvalidNodeAttributeError:
@@ -709,15 +813,15 @@ extern "C" {
  *
  * Macro. The XMLSec library macro for reporting an invalid transform status errors.
  */
-#define xmlSecInvalidTransfromStatusError(transform) \
-    {                                                 \
-        xmlSecError(XMLSEC_ERRORS_HERE,               \
+#define xmlSecInvalidTransfromStatusError(transform)   \
+    {                                                  \
+        xmlSecError(XMLSEC_ERRORS_HERE,                \
                    (const char*)xmlSecTransformGetName(transform), \
-                   NULL,                              \
-                   XMLSEC_ERRORS_R_INVALID_STATUS,    \
-                   "transformStatus=%d",              \
-                   (int)((transform)->status)         \
-        );                                            \
+                   NULL,                               \
+                   XMLSEC_ERRORS_R_INVALID_STATUS,     \
+                   "transformStatus=" XMLSEC_ENUM_FMT, \
+                   XMLSEC_ENUM_CAST((transform)->status) \
+        );                                             \
     }
 
 /**
@@ -733,9 +837,9 @@ extern "C" {
                    (const char*)xmlSecTransformGetName(transform), \
                    NULL,                              \
                    XMLSEC_ERRORS_R_INVALID_STATUS,    \
-                   "transformStatus=%ld, msg=%s",     \
-                   (long int)((transform)->status),   \
-                   msg                                \
+                   "transformStatus=" XMLSEC_ENUM_FMT "; msg=%s", \
+                   XMLSEC_ENUM_CAST((transform)->status),         \
+                   (msg)                              \
         );                                            \
     }
 
@@ -753,9 +857,9 @@ extern "C" {
                     (const char*)(errorObject),             \
                     NULL,                                   \
                     XMLSEC_ERRORS_R_INVALID_KEY_DATA_SIZE,  \
-                    "invalid key data size: actual=%ld and expected=%ld", \
-                    (unsigned long)(actual),                \
-                    (unsigned long)(expected)               \
+                    "invalid key data size: actual=" XMLSEC_SIZE_FMT " and expected=" XMLSEC_SIZE_FMT, \
+                    (actual),                               \
+                    (expected)                              \
         )
 
 /**
@@ -773,6 +877,30 @@ extern "C" {
                     "invalid zero key data size"            \
         )
 
+/**
+ * xmlSecImpossibleCastError:
+ *
+ * @srcType:            the source value type.
+ * @srcVal:             the source value.
+ * @srcFmt:             the source type printf format (e.g. "%d").
+ * @dstType:            the destination cast type.
+ * @dstMinVal:          the destination type min value.
+ * @dstMaxVal:          the destination type max value.
+ * @dstFmt:             the destination type printf format (e.g. "%lu").
+ * @errorObject:        the error specific error object (e.g. transform, key data, etc).
+ *
+ * Macro. The XMLSec library macro for reporting impossible cast errors.
+ */
+#define xmlSecImpossibleCastError(srcType, srcVal, srcFmt, dstType, dstMinVal, dstMaxVal, dstFmt, errorObject) \
+        xmlSecError(XMLSEC_ERRORS_HERE,                     \
+                    (const char*)(errorObject),             \
+                    NULL,                                   \
+                    XMLSEC_ERROR_R_CAST_IMPOSSIBLE,         \
+                    "src-type=" #srcType "; src-val=" srcFmt  \
+                    ";dst-type=" #dstType "; dst-min=" dstFmt \
+                    ";dst-max=" dstFmt "",                  \
+                    (srcVal), (dstMinVal), (dstMaxVal)      \
+        )
 
 /**
  * xmlSecOtherError:

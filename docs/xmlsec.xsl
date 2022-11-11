@@ -34,29 +34,6 @@
 <html>
 <head>
 <xsl:copy-of select="//head/*" />
-<style type="text/css">
-table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
-    width: 20em;
-}
-.synopsis, .classsynopsis {
-    background: #eeeeee;
-    border: solid 1px #aaaaaa;
-}
-.programlisting {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation {
-    background: #eeeeee;
-    border: solid 1px #000000;
-}
-.navigation a {
-    color: initial;
-}
-.navigation a:visited {
-    color: initial;
-}
-</style>
 </head>
 <body>
 <table width="100%" valign="top">
@@ -125,12 +102,7 @@ table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
 		    <xsl:with-param name="href">xmldsig.html</xsl:with-param> 
 		    <xsl:with-param name="text">XML Digital Signature</xsl:with-param> 
 		</xsl:call-template>
-	    </li>	    
-	    <ul>
-	    <li>
-		<a href="http://www.aleksey.com/xmlsec/xmldsig-verifier.html">Online Verifier</a> 
 	    </li>
-	    </ul>
 	    <li>
 		<xsl:call-template name="linkto"> 
 		    <xsl:with-param name="href">xmlenc.html</xsl:with-param> 
@@ -149,7 +121,7 @@ table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
 		    <xsl:with-param name="text">Reporting Bugs</xsl:with-param> 
 		</xsl:call-template>
 	    </li>
-            <li><a href="http://www.aleksey.com/pipermail/xmlsec">Mailing list</a></li>
+            <li><a href="mailing-list.html">Mailing list</a></li>
 	    <li>
 		<xsl:call-template name="linkto"> 
 		    <xsl:with-param name="href">related.html</xsl:with-param> 
@@ -213,5 +185,5 @@ table.CALSTABLE > tbody > tr:nth-child(1) > td:nth-child(1) {
 </body>
 </html>
 
-    </xsl:template>
+</xsl:template>
 </xsl:stylesheet>
