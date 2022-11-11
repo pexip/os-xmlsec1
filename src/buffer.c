@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:buffer
@@ -27,6 +27,8 @@
 #include <xmlsec/base64.h>
 #include <xmlsec/buffer.h>
 #include <xmlsec/errors.h>
+
+#include "cast_helpers.h"
 
 /*****************************************************************************
  *
@@ -74,7 +76,7 @@ xmlSecBufferCreate(xmlSecSize size) {
 
     ret = xmlSecBufferInitialize(buf, size);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferInitialize", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBufferInitialize", NULL, "size=" XMLSEC_SIZE_FMT, size);
         xmlSecBufferDestroy(buf);
         return(NULL);
     }
@@ -190,7 +192,7 @@ xmlSecBufferSetData(xmlSecBufferPtr buf, const xmlSecByte* data, xmlSecSize size
 
         ret = xmlSecBufferSetMaxSize(buf, size);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=%d", size);
+            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=" XMLSEC_SIZE_FMT, size);
             return(-1);
         }
 
@@ -234,7 +236,7 @@ xmlSecBufferSetSize(xmlSecBufferPtr buf, xmlSecSize size) {
 
     ret = xmlSecBufferSetMaxSize(buf, size);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 
@@ -334,7 +336,8 @@ xmlSecBufferAppend(xmlSecBufferPtr buf, const xmlSecByte* data, xmlSecSize size)
 
         ret = xmlSecBufferSetMaxSize(buf, buf->size + size);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=%d", buf->size + size);
+            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL,
+                "size=" XMLSEC_SIZE_FMT, (buf->size + size));
             return(-1);
         }
 
@@ -366,7 +369,8 @@ xmlSecBufferPrepend(xmlSecBufferPtr buf, const xmlSecByte* data, xmlSecSize size
 
         ret = xmlSecBufferSetMaxSize(buf, buf->size + size);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL, "size=%d", buf->size + size);
+            xmlSecInternalError2("xmlSecBufferSetMaxSize", NULL,
+                "size=" XMLSEC_SIZE_FMT, (buf->size + size));
             return(-1);
         }
 
@@ -432,6 +436,42 @@ xmlSecBufferRemoveTail(xmlSecBufferPtr buf, xmlSecSize size) {
 }
 
 /**
+ * xmlSecBufferReverse:
+ * @buf:                the pointer to buffer object.
+ *
+ * Reverses order of bytes in the buffer @buf.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecBufferReverse(xmlSecBufferPtr buf) {
+    xmlSecByte* pp;
+    xmlSecByte* qq;
+    xmlSecSize  size;
+    xmlSecByte ch;
+
+    xmlSecAssert2(buf != NULL, -1);
+
+    /* trivial case */
+    size = xmlSecBufferGetSize(buf);
+    if (size <= 1) {
+        return(0);
+    }
+
+    pp = xmlSecBufferGetData(buf);
+    xmlSecAssert2(pp != NULL, -1);
+
+    for (qq = pp + size - 1; pp < qq; ++pp, --qq) {
+        ch = *(pp);
+        *(pp) = *(qq);
+        *(qq) = ch;
+    }
+
+    return(0);
+}
+
+
+/**
  * xmlSecBufferReadFile:
  * @buf:                the pointer to buffer object.
  * @filename:           the filename.
@@ -444,8 +484,10 @@ int
 xmlSecBufferReadFile(xmlSecBufferPtr buf, const char* filename) {
     xmlSecByte buffer[1024];
     FILE* f = NULL;
+    xmlSecSize size;
     size_t len;
     int ret;
+    int res = -1;
 
     xmlSecAssert2(buf != NULL, -1);
     xmlSecAssert2(filename != NULL, -1);
@@ -457,27 +499,32 @@ xmlSecBufferReadFile(xmlSecBufferPtr buf, const char* filename) {
 #endif /* _MSC_VER */
     if(f == NULL) {
         xmlSecIOError("fopen", filename, NULL);
-        return(-1);
+        goto done;
     }
 
     while(!feof(f)) {
         len = fread(buffer, 1, sizeof(buffer), f);
         if(ferror(f)) {
             xmlSecIOError("fread", filename, NULL);
-            fclose(f);
-            return(-1);
+            goto done;
         }
 
-        ret = xmlSecBufferAppend(buf, buffer, XMLSEC_SIZE_BAD_CAST(len));
+        XMLSEC_SAFE_CAST_SIZE_T_TO_SIZE(len, size, goto done, NULL);
+        ret = xmlSecBufferAppend(buf, buffer, size);
         if(ret < 0) {
-            xmlSecInternalError2("xmlSecBufferAppend", NULL, "size=%d", XMLSEC_SIZE_BAD_CAST(len));
-            fclose(f);
-            return(-1);
+            xmlSecInternalError2("xmlSecBufferAppend", NULL, "size=" XMLSEC_SIZE_T_FMT, len);
+            goto done;
         }
     }
 
-    fclose(f);
-    return(0);
+    /* success */
+    res = 0;
+
+done:
+    if(f != NULL) {
+        fclose(f);
+    }
+    return(res);
 }
 
 /**
@@ -492,9 +539,10 @@ xmlSecBufferReadFile(xmlSecBufferPtr buf, const char* filename) {
  */
 int
 xmlSecBufferBase64NodeContentRead(xmlSecBufferPtr buf, xmlNodePtr node) {
-    xmlChar* content;
-    xmlSecSize size;
+    xmlChar* content = NULL;
+    xmlSecSize outWritten;
     int ret;
+    int res = -1;
 
     xmlSecAssert2(buf != NULL, -1);
     xmlSecAssert2(node != NULL, -1);
@@ -502,34 +550,38 @@ xmlSecBufferBase64NodeContentRead(xmlSecBufferPtr buf, xmlNodePtr node) {
     content = xmlNodeGetContent(node);
     if(content == NULL) {
         xmlSecInvalidNodeContentError(node, NULL, "empty");
-        return(-1);
+        goto done;
     }
 
     /* base64 decode size is less than input size */
-    ret = xmlSecBufferSetMaxSize(buf, xmlStrlen(content));
+    ret = xmlSecBufferSetMaxSize(buf, xmlSecStrlen(content));
     if(ret < 0) {
         xmlSecInternalError("xmlSecBufferSetMaxSize", NULL);
-        xmlFree(content);
-        return(-1);
+        goto done;
     }
 
-    ret = xmlSecBase64Decode(content, xmlSecBufferGetData(buf), xmlSecBufferGetMaxSize(buf));
+    ret = xmlSecBase64Decode_ex(content, xmlSecBufferGetData(buf),
+        xmlSecBufferGetMaxSize(buf), &outWritten);
     if(ret < 0) {
-        xmlSecInternalError("xmlSecBase64Decode", NULL);
-        xmlFree(content);
-        return(-1);
+        xmlSecInternalError("xmlSecBase64Decode_ex", NULL);
+        goto done;
     }
-    size = ret;
 
-    ret = xmlSecBufferSetSize(buf, size);
+    ret = xmlSecBufferSetSize(buf, outWritten);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=%d", size);
-        xmlFree(content);
-        return(-1);
+        xmlSecInternalError2("xmlSecBufferSetSize", NULL,
+            "size=" XMLSEC_SIZE_FMT, outWritten);
+        goto done;
     }
-    xmlFree(content);
 
-    return(0);
+    /* success */
+    res = 0;
+
+done:
+    if(content != NULL) {
+        xmlFree(content);
+    }
+    return(res);
 }
 
 /**
@@ -554,6 +606,7 @@ xmlSecBufferBase64NodeContentWrite(xmlSecBufferPtr buf, xmlNodePtr node, int col
         xmlSecInternalError("xmlSecBase64Encode", NULL);
         return(-1);
     }
+
     xmlNodeAddContent(node, content);
     xmlFree(content);
 
@@ -567,7 +620,7 @@ xmlSecBufferBase64NodeContentWrite(xmlSecBufferPtr buf, xmlNodePtr node, int col
  ************************************************************************/
 static int      xmlSecBufferIOWrite                             (xmlSecBufferPtr buf,
                                                                  const xmlSecByte *data,
-                                                                 xmlSecSize size);
+                                                                 int len);
 static int      xmlSecBufferIOClose                             (xmlSecBufferPtr buf);
 
 /**
@@ -589,19 +642,22 @@ xmlSecBufferCreateOutputBuffer(xmlSecBufferPtr buf) {
 }
 
 static int
-xmlSecBufferIOWrite(xmlSecBufferPtr buf, const xmlSecByte *data, xmlSecSize size) {
+xmlSecBufferIOWrite(xmlSecBufferPtr buf, const xmlSecByte *data, int len) {
+    xmlSecSize size;
     int ret;
 
     xmlSecAssert2(buf != NULL, -1);
     xmlSecAssert2(data != NULL, -1);
+    xmlSecAssert2(len >= 0, -1);
 
+    XMLSEC_SAFE_CAST_INT_TO_SIZE(len, size, return(-1), NULL);
     ret = xmlSecBufferAppend(buf, data, size);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferAppend", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBufferAppend", NULL, "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
-
-    return(size);
+    /* we appended the whole input buffer */
+    return(len);
 }
 
 static int

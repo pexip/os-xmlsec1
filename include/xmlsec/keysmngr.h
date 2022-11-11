@@ -6,11 +6,12 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_KEYSMGMR_H__
 #define __XMLSEC_KEYSMGMR_H__
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/list.h>
 #include <xmlsec/keys.h>
@@ -238,6 +239,23 @@ struct _xmlSecKeyStoreKlass {
  * Simple Keys Store
  *
  ***************************************************************************/
+
+
+/**
+ * xmlSecKeyDataDsaWrite:
+ * @id:                 the key data data.
+ * @data:               the pointer to input @xmlSecKeyData.
+ * @dsaValue:            the pointer to input @xmlSecKeyValueDsa.
+ * @writePrivateKey:    the flag indicating if private key component should be output or not.
+ *
+ * Writes @xmlSecKeyData to @xmlSecKeyValueDsa.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+typedef int                    (*xmlSecSimpleKeysStoreAdoptKeyFunc)     (xmlSecKeyStorePtr store,
+                                                                         xmlSecKeyPtr key);
+
+
 /**
  * xmlSecSimpleKeysStoreId:
  *
@@ -250,6 +268,10 @@ XMLSEC_EXPORT int                       xmlSecSimpleKeysStoreAdoptKey   (xmlSecK
 XMLSEC_EXPORT int                       xmlSecSimpleKeysStoreLoad       (xmlSecKeyStorePtr store,
                                                                          const char *uri,
                                                                          xmlSecKeysMngrPtr keysMngr);
+XMLSEC_EXPORT int                       xmlSecSimpleKeysStoreLoad_ex    (xmlSecKeyStorePtr store,
+                                                                         const char *uri,
+                                                                         xmlSecKeysMngrPtr keysMngr,
+                                                                         xmlSecSimpleKeysStoreAdoptKeyFunc adoptKeyFunc);
 XMLSEC_EXPORT int                       xmlSecSimpleKeysStoreSave       (xmlSecKeyStorePtr store,
                                                                          const char *filename,
                                                                          xmlSecKeyDataType type);

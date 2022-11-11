@@ -31,6 +31,7 @@
 #include <xmlsec/nss/crypto.h>
 #include <xmlsec/nss/pkikeys.h>
 
+#include "../cast_helpers.h"
 
 /**************************************************************************
  *
@@ -60,13 +61,9 @@ struct _xmlSecNssSignatureCtx {
  *
  * Signature transforms
  *
- * xmlSecNssSignatureCtx is located after xmlSecTransform
- *
  *****************************************************************************/
-#define xmlSecNssSignatureSize  \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecNssSignatureCtx))
-#define xmlSecNssSignatureGetCtx(transform) \
-    ((xmlSecNssSignatureCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+XMLSEC_TRANSFORM_DECLARE(NssSignature, xmlSecNssSignatureCtx)
+#define xmlSecNssSignatureSize XMLSEC_TRANSFORM_SIZE(NssSignature)
 
 static int      xmlSecNssSignatureCheckId               (xmlSecTransformPtr transform);
 static int      xmlSecNssSignatureInitialize            (xmlSecTransformPtr transform);
@@ -438,7 +435,7 @@ xmlSecNssSignatureVerify(xmlSecTransformPtr transform,
     xmlSecAssert2(ctx != NULL, -1);
 
     signature.data = (unsigned char *)data;
-    signature.len = dataSize;
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(dataSize, signature.len, return(-1), xmlSecTransformGetName(transform));
 
     if(xmlSecNssSignatureAlgorithmEncoded(ctx->alg)) {
         /* This creates a signature which is ASN1 encoded */
@@ -473,6 +470,52 @@ xmlSecNssSignatureVerify(xmlSecTransformPtr transform,
 
     transform->status = xmlSecTransformStatusOk;
     return(0);
+}
+
+/* This creates a signature which is ASN1 encoded */
+static SECItem*
+xmlSecNssSignatureDecode(xmlSecNssSignatureCtxPtr ctx, SECItem* signature) {
+    int signatureLen;
+    unsigned int signatureSize;
+    SECItem* res = NULL;
+
+    xmlSecAssert2(ctx != NULL, NULL);
+    xmlSecAssert2(signature != NULL, NULL);
+
+    switch(ctx->alg) {
+    case SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST:
+        res = DSAU_DecodeDerSig(signature);
+        if(res == NULL) {
+            xmlSecNssError("DSAU_DecodeDerSig", NULL);
+            return(NULL);
+        }
+        break;
+     case SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST:
+     case SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE:
+     case SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE:
+     case SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE:
+     case SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE:
+     case SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE:
+        /* In these cases the signature length depends on the key parameters. */
+        signatureLen = PK11_SignatureLen(ctx->u.sig.privkey);
+        if(signatureLen < 1) {
+            xmlSecNssError("PK11_SignatureLen", NULL);
+            return(NULL);
+        }
+        XMLSEC_SAFE_CAST_INT_TO_UINT(signatureLen, signatureSize, return(NULL), NULL);
+
+        res = DSAU_DecodeDerSigToLen(signature, signatureSize);
+        if(res == NULL) {
+            xmlSecNssError("DSAU_DecodeDerSigToLen", NULL);
+            return(NULL);
+        }
+        break;
+    default:
+        xmlSecInternalError2("xmlSecNssSignatureDecode", NULL,
+            "unknown algorithm=%u", ctx->alg);
+        return(NULL);
+    }
+    return(res);
 }
 
 static int
@@ -529,17 +572,20 @@ xmlSecNssSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
     }
 
     if((transform->status == xmlSecTransformStatusWorking) && (inSize > 0)) {
+        unsigned int inLen;
+
         xmlSecAssert2(outSize == 0, -1);
 
+        XMLSEC_SAFE_CAST_SIZE_TO_UINT(inSize, inLen, return(-1), xmlSecTransformGetName(transform));
         if(transform->operation == xmlSecTransformOperationSign) {
-            status = SGN_Update(ctx->u.sig.sigctx, xmlSecBufferGetData(in), inSize);
+            status = SGN_Update(ctx->u.sig.sigctx, xmlSecBufferGetData(in), inLen);
             if(status != SECSuccess) {
                 xmlSecNssError("SGN_Update",
                                xmlSecTransformGetName(transform));
                 return(-1);
             }
         } else {
-            status = VFY_Update(ctx->u.vfy.vfyctx, xmlSecBufferGetData(in), inSize);
+            status = VFY_Update(ctx->u.vfy.vfyctx, xmlSecBufferGetData(in), inLen);
             if(status != SECSuccess) {
                 xmlSecNssError("VFY_Update",
                                xmlSecTransformGetName(transform));
@@ -547,7 +593,7 @@ xmlSecNssSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
             }
         }
 
-        ret = xmlSecBufferRemoveHead(in, inSize);
+        ret = xmlSecBufferRemoveHead(in, inLen);
         if(ret < 0) {
             xmlSecInternalError("xmlSecBufferRemoveHead",
                                 xmlSecTransformGetName(transform));
@@ -570,39 +616,19 @@ xmlSecNssSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
                 /* This creates a signature which is ASN1 encoded */
                 SECItem * signatureClr;
 
-                if(ctx->alg == SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST) {
-                    signatureClr = DSAU_DecodeDerSig(&signature);
-                    if(signatureClr == NULL) {
-                        xmlSecNssError("DSAU_DecodeDerSig",
-                                       xmlSecTransformGetName(transform));
-                        SECITEM_FreeItem(&signature, PR_FALSE);
-                        return(-1);
-                    }
-                } else {
-                    /* In the ECDSA case the signature length depends on the
-                     * key parameters. */
-                    int signatureSize = PK11_SignatureLen(ctx->u.sig.privkey);
-                    if(signatureSize < 1) {
-                        xmlSecNssError("PK11_SignatureLen",
-                                       xmlSecTransformGetName(transform));
-                        SECITEM_FreeItem(&signature, PR_FALSE);
-                        return(-1);
-                    }
-
-                    signatureClr = DSAU_DecodeDerSigToLen(&signature, signatureSize);
-                    if(signatureClr == NULL) {
-                        xmlSecNssError("DSAU_DecodeDerSigToLen",
-                                       xmlSecTransformGetName(transform));
-                        SECITEM_FreeItem(&signature, PR_FALSE);
-                        return(-1);
-                    }
+                signatureClr = xmlSecNssSignatureDecode(ctx, &signature);
+                if(signatureClr == NULL) {
+                    xmlSecInternalError("xmlSecNssSignatureDecode",
+                        xmlSecTransformGetName(transform));
+                    SECITEM_FreeItem(&signature, PR_FALSE);
+                    return(-1);
                 }
 
                 ret = xmlSecBufferSetData(out, signatureClr->data, signatureClr->len);
                 if(ret < 0) {
                     xmlSecInternalError2("xmlSecBufferSetData",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", signatureClr->len);
+                        xmlSecTransformGetName(transform),
+                        "size=%u", signatureClr->len);
                     SECITEM_FreeItem(&signature, PR_FALSE);
                     return(-1);
                 }
@@ -613,8 +639,8 @@ xmlSecNssSignatureExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
                 ret = xmlSecBufferSetData(out, signature.data, signature.len);
                 if(ret < 0) {
                     xmlSecInternalError2("xmlSecBufferSetData",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", signature.len);
+                        xmlSecTransformGetName(transform),
+                        "size=%u", signature.len);
                     SECITEM_FreeItem(&signature, PR_FALSE);
                     return(-1);
                 }

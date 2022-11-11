@@ -4,7 +4,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 #ifndef __XMLSEC_NSS_CRYPTO_H__
@@ -14,10 +14,17 @@
 #include <nss.h>
 #include <pk11func.h>
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/dl.h>
+
+
+/* MD5 was removed from NSS */
+#if (NSS_VMAJOR > 3) || ((NSS_VMAJOR == 3) && (NSS_VMINOR > 58))
+#define XMLSEC_NO_MD5 1
+#endif /* (NSS_VMAJOR > 3) || ((NSS_VMAJOR == 3) && (NSS_VMINOR > 58)) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -285,8 +292,8 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecNssTransformEcdsaSha512GetKlass(voi
  *******************************************************************/
 #ifndef XMLSEC_NO_HMAC
 
-XMLSEC_CRYPTO_EXPORT int               xmlSecNssHmacGetMinOutputLength(void);
-XMLSEC_CRYPTO_EXPORT void              xmlSecNssHmacSetMinOutputLength(int min_length);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int  xmlSecNssHmacGetMinOutputLength(void);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT void xmlSecNssHmacSetMinOutputLength(int min_length);
 
 /**
  * xmlSecNssKeyDataHmacId:

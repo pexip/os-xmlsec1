@@ -1,3 +1,58 @@
+xmlsec1 (1.2.36-1pexip1) pexip; urgency=medium
+
+  * New upstream release
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 10 Nov 2022 19:29:00 +0000
+
+xmlsec1 (1.2.36-1) experimental; urgency=medium
+
+  * New upstream version 1.2.36
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 29 Oct 2022 18:04:55 +0200
+
+xmlsec1 (1.2.35-1) experimental; urgency=medium
+
+  * New upstream version 1.2.35
+
+ -- Rene Engelhard <rene@debian.org>  Fri, 28 Oct 2022 21:10:50 +0200
+
+xmlsec1 (1.2.34-2) unstable; urgency=medium
+
+  * upload to unstable 
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 11 Jun 2022 12:14:37 +0200
+
+xmlsec1 (1.2.34-1) experimental; urgency=medium
+
+  * New upstream version 1.2.34
+
+  * bump libnss3-dev build-dep to 2:3.72-2 and add build-conflicts against
+    nspr << 2:4.32-3 to ensure build against nss.pc/nspr.pc (and not
+    xulrunner-*)
+
+ -- Rene Engelhard <rene@debian.org>  Wed, 18 May 2022 18:39:43 +0200
+
+xmlsec1 (1.2.33-1) unstable; urgency=medium
+
+  * New upstream version 1.2.33
+
+  * remove build-dep on chrpath and use --enable-{docs,manpages}-build
+    (closes: #981275)
+
+ -- Rene Engelhard <rene@debian.org>  Tue, 02 Nov 2021 22:38:39 +0100
+
+xmlsec1 (1.2.32-2) unstable; urgency=medium
+
+  * upload to unstable 
+
+ -- Rene Engelhard <rene@debian.org>  Sun, 15 Aug 2021 08:21:51 +0200
+
+xmlsec1 (1.2.32-1) experimental; urgency=medium
+
+  * New upstream version 1.2.32
+
+ -- Rene Engelhard <rene@debian.org>  Mon, 24 May 2021 18:33:26 +0200
+
 xmlsec1 (1.2.31-1pexip3) pexip-bullseye; urgency=medium
 
   * Bullseye rebuild for ARM64 inclusion

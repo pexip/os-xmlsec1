@@ -32,6 +32,8 @@
 
 #include <xmlsec/mscng/crypto.h>
 
+#include "../cast_helpers.h"
+
 typedef struct _xmlSecMSCngDigestCtx xmlSecMSCngDigestCtx, *xmlSecMSCngDigestCtxPtr;
 struct _xmlSecMSCngDigestCtx {
     LPCWSTR pszAlgId;
@@ -46,14 +48,9 @@ struct _xmlSecMSCngDigestCtx {
  *
  * MSCng Digest transforms
  *
- * xmlSecMSCngDigestCtx is located after xmlSecTransform
- *
  *****************************************************************************/
-#define xmlSecMSCngDigestSize        \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecMSCngDigestCtx))
-#define xmlSecMSCngDigestGetCtx(transform) \
-    ((xmlSecMSCngDigestCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
-
+XMLSEC_TRANSFORM_DECLARE(MSCngDigest, xmlSecMSCngDigestCtx)
+#define xmlSecMSCngDigestSize XMLSEC_TRANSFORM_SIZE(MSCngDigest)
 
 static int      xmlSecMSCngDigestInitialize  (xmlSecTransformPtr transform);
 static void     xmlSecMSCngDigestFinalize    (xmlSecTransformPtr transform);
@@ -184,6 +181,7 @@ xmlSecMSCngDigestVerify(xmlSecTransformPtr transform,
                         xmlSecSize dataSize,
                         xmlSecTransformCtxPtr transformCtx) {
     xmlSecMSCngDigestCtxPtr ctx;
+    xmlSecSize hashSize;
 
     xmlSecAssert2(xmlSecMSCngDigestCheckId(transform), -1);
     xmlSecAssert2(xmlSecTransformCheckSize(transform, xmlSecMSCngDigestSize), -1);
@@ -196,14 +194,15 @@ xmlSecMSCngDigestVerify(xmlSecTransformPtr transform,
     xmlSecAssert2(ctx != NULL, -1);
     xmlSecAssert2(ctx->cbHash > 0, -1);
 
-    if(dataSize != ctx->cbHash) {
-        xmlSecInvalidSizeError("Digest", dataSize, ctx->cbHash,
+    XMLSEC_SAFE_CAST_ULONG_TO_SIZE(ctx->cbHash, hashSize, return(-1), xmlSecTransformGetName(transform));
+    if(dataSize != hashSize) {
+        xmlSecInvalidSizeError("Digest", dataSize, hashSize,
            xmlSecTransformGetName(transform));
         transform->status = xmlSecTransformStatusFail;
         return(0);
     }
 
-    if(memcmp(ctx->pbHash, data, ctx->cbHash) != 0) {
+    if(memcmp(ctx->pbHash, data, hashSize) != 0) {
         xmlSecInvalidDataError("data and digest do not match",
             xmlSecTransformGetName(transform));
         transform->status = xmlSecTransformStatusFail;
@@ -313,11 +312,14 @@ xmlSecMSCngDigestExecute(xmlSecTransformPtr transform,
 
         inSize = xmlSecBufferGetSize(in);
         if(inSize > 0) {
+            DWORD dwInSize;
+
             /* hash some data */
+            XMLSEC_SAFE_CAST_SIZE_TO_ULONG(inSize, dwInSize, return(-1), xmlSecTransformGetName(transform));
             status = BCryptHashData(
                 ctx->hHash,
                 (PBYTE)xmlSecBufferGetData(in),
-                inSize,
+                dwInSize,
                 0);
             if(status != STATUS_SUCCESS) {
                 xmlSecMSCngNtError("BCryptHashData", xmlSecTransformGetName(transform), status);
@@ -326,8 +328,7 @@ xmlSecMSCngDigestExecute(xmlSecTransformPtr transform,
 
             ret = xmlSecBufferRemoveHead(in, inSize);
             if(ret < 0) {
-                xmlSecInternalError("xmlSecBufferRemoveHead",
-                                     xmlSecTransformGetName(transform));
+                xmlSecInternalError("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform));
                 return(-1);
             }
         }

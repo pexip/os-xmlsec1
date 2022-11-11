@@ -1,9 +1,9 @@
-/** 
+/**
  * XML Security standards test: XMLDSig
- * 
+ *
  * See Copyright for the status of this software.
- * 
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ *
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -21,14 +21,13 @@
 
 #ifndef XMLSEC_NO_XSLT
 #include <libxslt/xslt.h>
-#include <libxslt/extensions.h> 
+#include <libxslt/extensions.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/xsltutils.h>
 #include <libxslt/security.h>
 #include <libexslt/exslt.h>
 #endif /* XMLSEC_NO_XSLT */
 
-#define XMLSEC_PRIVATE
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/xmltree.h>
 #include <xmlsec/keys.h>
@@ -47,13 +46,13 @@
 
 static const char copyright[] =
     "Written by Aleksey Sanin <aleksey@aleksey.com>.\n\n"
-    "Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved..\n"
+    "Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved..\n"
     "This is free software: see the source for copying information.\n";
 
-static const char bugs[] = 
+static const char bugs[] =
     "Report bugs to http://www.aleksey.com/xmlsec/bugs.html\n";
 
-static const char helpCommands1[] =     
+static const char helpCommands1[] =
     "Usage: xmlsec <command> [<options>] [<files>]\n"
     "\n"
     "xmlsec is a command line tool for signing, verifying, encrypting and\n"
@@ -64,7 +63,7 @@ static const char helpCommands1[] =
     "  --version   "    "\tprint version information and exit\n"
     "  --keys      "    "\tkeys XML file manipulation\n";
 
-static const char helpCommands2[] =     
+static const char helpCommands2[] =
 #ifndef XMLSEC_NO_XMLDSIG
     "  --sign      "    "\tsign data and output XML document\n"
     "  --verify    "    "\tverify signed document\n"
@@ -78,52 +77,52 @@ static const char helpCommands2[] =
 #endif /* XMLSEC_NO_XMLENC */
     ;
 
-static const char helpVersion[] = 
+static const char helpVersion[] =
     "Usage: xmlsec version\n"
     "Prints version information and exits\n";
 
-static const char helpKeys[] =     
+static const char helpKeys[] =
     "Usage: xmlsec keys [<options>] <file>\n"
     "Creates a new XML keys file <file>\n";
-    
-static const char helpSign[] =     
+
+static const char helpSign[] =
     "Usage: xmlsec sign [<options>] <file>\n"
     "Calculates XML Digital Signature using template file <file>\n";
-    
-static const char helpVerify[] =     
+
+static const char helpVerify[] =
     "Usage: xmlsec verify [<options>] <file>\n"
     "Verifies XML Digital Signature in the <file>\n";
 
-static const char helpSignTmpl[] =     
+static const char helpSignTmpl[] =
     "Usage: xmlsec sign-tmpl [<options>]\n"
     "Creates a simple dynamic template and calculates XML Digital Signature\n"
     "(for testing only).\n";
 
-static const char helpEncrypt[] =     
+static const char helpEncrypt[] =
     "Usage: xmlsec encrypt [<options>] <file>\n"
     "Encrypts data and creates XML Encryption using template file <file>\n";
 
-static const char helpEncryptTmpl[] =     
+static const char helpEncryptTmpl[] =
     "Usage: xmlsec encrypt [<options>]\n"
     "Creates a simple dynamic template and calculates XML Encryption\n";
 
-static const char helpDecrypt[] =     
+static const char helpDecrypt[] =
     "Usage: xmlsec decrypt [<options>] <file>\n"
     "Decrypts XML Encryption data in the <file>\n";
 
-static const char helpListKeyData[] =     
+static const char helpListKeyData[] =
     "Usage: xmlsec list-key-data\n"
     "Prints the list of known key data klasses\n";
 
-static const char helpCheckKeyData[] =     
+static const char helpCheckKeyData[] =
     "Usage: xmlsec check-key-data <key-data-name> [<key-data-name> ... ]\n"
     "Checks the given key-data against the list of known key-data klasses\n";
 
-static const char helpListTransforms[] =     
+static const char helpListTransforms[] =
     "Usage: xmlsec list-transforms\n"
     "Prints the list of known transform klasses\n";
 
-static const char helpCheckTransforms[] =     
+static const char helpCheckTransforms[] =
     "Usage: xmlsec check-transforms <transform-name> [<transform-name> ... ]\n"
     "Checks the given transforms against the list of known transform klasses\n";
 
@@ -146,7 +145,7 @@ static const char helpCheckTransforms[] =
  * General configuration params
  *
  ***************************************************************/
-static xmlSecAppCmdLineParam helpParam = { 
+static xmlSecAppCmdLineParam helpParam = {
     xmlSecAppCmdLineTopicGeneral,
     "--help",
     "-h",
@@ -157,7 +156,7 @@ static xmlSecAppCmdLineParam helpParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam cryptoParam = { 
+static xmlSecAppCmdLineParam cryptoParam = {
     xmlSecAppCmdLineTopicCryptoConfig,
     "--crypto",
     NULL,
@@ -170,7 +169,7 @@ static xmlSecAppCmdLineParam cryptoParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam cryptoConfigParam = { 
+static xmlSecAppCmdLineParam cryptoConfigParam = {
     xmlSecAppCmdLineTopicCryptoConfig,
     "--crypto-config",
     NULL,
@@ -182,7 +181,7 @@ static xmlSecAppCmdLineParam cryptoConfigParam = {
 };
 
 
-static xmlSecAppCmdLineParam repeatParam = { 
+static xmlSecAppCmdLineParam repeatParam = {
     xmlSecAppCmdLineTopicCryptoConfig,
     "--repeat",
     "-r",
@@ -194,7 +193,7 @@ static xmlSecAppCmdLineParam repeatParam = {
 };
 
 
-static xmlSecAppCmdLineParam disableErrorMsgsParam = { 
+static xmlSecAppCmdLineParam disableErrorMsgsParam = {
     xmlSecAppCmdLineTopicGeneral,
     "--disable-error-msgs",
     NULL,
@@ -203,9 +202,9 @@ static xmlSecAppCmdLineParam disableErrorMsgsParam = {
     xmlSecAppCmdLineParamTypeFlag,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam printCryptoErrorMsgsParam = { 
+static xmlSecAppCmdLineParam printCryptoErrorMsgsParam = {
     xmlSecAppCmdLineTopicGeneral,
     "--print-crypto-error-msgs",
     NULL,
@@ -214,14 +213,14 @@ static xmlSecAppCmdLineParam printCryptoErrorMsgsParam = {
     xmlSecAppCmdLineParamTypeFlag,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
 /****************************************************************
  *
  * Keys Manager params
  *
  ***************************************************************/
-static xmlSecAppCmdLineParam genKeyParam = { 
+static xmlSecAppCmdLineParam genKeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--gen-key",
     "-g",
@@ -235,7 +234,7 @@ static xmlSecAppCmdLineParam genKeyParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam keysFileParam = { 
+static xmlSecAppCmdLineParam keysFileParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--keys-file",
     "-k",
@@ -246,7 +245,7 @@ static xmlSecAppCmdLineParam keysFileParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam privkeyParam = { 
+static xmlSecAppCmdLineParam privkeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--privkey-pem",
     "--privkey",
@@ -258,7 +257,7 @@ static xmlSecAppCmdLineParam privkeyParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam privkeyDerParam = { 
+static xmlSecAppCmdLineParam privkeyDerParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--privkey-der",
     NULL,
@@ -270,7 +269,7 @@ static xmlSecAppCmdLineParam privkeyDerParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pkcs8PemParam = { 
+static xmlSecAppCmdLineParam pkcs8PemParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pkcs8-pem",
     "--privkey-p8-pem",
@@ -282,7 +281,7 @@ static xmlSecAppCmdLineParam pkcs8PemParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pkcs8DerParam = { 
+static xmlSecAppCmdLineParam pkcs8DerParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pkcs8-der",
     "--privkey-p8-der",
@@ -294,7 +293,7 @@ static xmlSecAppCmdLineParam pkcs8DerParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pubkeyParam = { 
+static xmlSecAppCmdLineParam pubkeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pubkey-pem",
     "--pubkey",
@@ -305,7 +304,7 @@ static xmlSecAppCmdLineParam pubkeyParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pubkeyDerParam = { 
+static xmlSecAppCmdLineParam pubkeyDerParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pubkey-der",
     NULL,
@@ -317,8 +316,8 @@ static xmlSecAppCmdLineParam pubkeyDerParam = {
 };
 
 
-#ifndef XMLSEC_NO_AES    
-static xmlSecAppCmdLineParam aeskeyParam = { 
+#ifndef XMLSEC_NO_AES
+static xmlSecAppCmdLineParam aeskeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--aeskey",
     NULL,
@@ -330,8 +329,8 @@ static xmlSecAppCmdLineParam aeskeyParam = {
 };
 #endif /* XMLSEC_NO_AES */
 
-#ifndef XMLSEC_NO_DES   
-static xmlSecAppCmdLineParam deskeyParam = { 
+#ifndef XMLSEC_NO_DES
+static xmlSecAppCmdLineParam deskeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--deskey",
     NULL,
@@ -343,8 +342,8 @@ static xmlSecAppCmdLineParam deskeyParam = {
 };
 #endif /* XMLSEC_NO_DES */
 
-#ifndef XMLSEC_NO_HMAC    
-static xmlSecAppCmdLineParam hmackeyParam = { 
+#ifndef XMLSEC_NO_HMAC
+static xmlSecAppCmdLineParam hmackeyParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--hmackey",
     NULL,
@@ -356,7 +355,7 @@ static xmlSecAppCmdLineParam hmackeyParam = {
 };
 #endif /* XMLSEC_NO_HMAC */
 
-static xmlSecAppCmdLineParam pwdParam = { 
+static xmlSecAppCmdLineParam pwdParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pwd",
     NULL,
@@ -365,9 +364,9 @@ static xmlSecAppCmdLineParam pwdParam = {
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam enabledKeyDataParam = { 
+static xmlSecAppCmdLineParam enabledKeyDataParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--enabled-key-data",
     NULL,
@@ -380,7 +379,7 @@ static xmlSecAppCmdLineParam enabledKeyDataParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam enabledRetrievalMethodUrisParam = { 
+static xmlSecAppCmdLineParam enabledRetrievalMethodUrisParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--enabled-retrieval-method-uris",
     NULL,
@@ -393,12 +392,26 @@ static xmlSecAppCmdLineParam enabledRetrievalMethodUrisParam = {
     NULL
 };
 
+static xmlSecAppCmdLineParam privkeyOpensslEngineParam = {
+    xmlSecAppCmdLineTopicKeysMngr,
+    "--privkey-openssl-engine",
+    NULL,
+    "--privkey-openssl-engine[:<name>] <openssl-engine>;<openssl-key-id>[,<crtfile>[,<crtfile>[...]]]"
+    "\n\tload private key by OpenSSL ENGINE interface; specify the name of engine"
+    "\n\t(like with -engine params), the key specs (like with -inkey or -key params)"
+    "\n\tand optionally certificates that verify this key",
+    xmlSecAppCmdLineParamTypeStringList,
+    xmlSecAppCmdLineParamFlagParamNameValue | xmlSecAppCmdLineParamFlagMultipleValues,
+    NULL
+};
+
+
 /****************************************************************
  *
  * Common params
  *
  ***************************************************************/
-static xmlSecAppCmdLineParam sessionKeyParam = { 
+static xmlSecAppCmdLineParam sessionKeyParam = {
     xmlSecAppCmdLineTopicDSigSign | xmlSecAppCmdLineTopicEncEncrypt,
     "--session-key",
     NULL,
@@ -409,10 +422,10 @@ static xmlSecAppCmdLineParam sessionKeyParam = {
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam outputParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam outputParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--output",
     "-o",
@@ -423,8 +436,8 @@ static xmlSecAppCmdLineParam outputParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam nodeIdParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam nodeIdParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--node-id",
     NULL,
@@ -433,75 +446,75 @@ static xmlSecAppCmdLineParam nodeIdParam = {
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam nodeNameParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam nodeNameParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--node-name",
-    NULL,   
+    NULL,
     "--node-name [<namespace-uri>:]<name>"
     "\n\tset the operation start point to the first node"
     "\n\twith given <name> and <namespace> URI",
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
-    
-static xmlSecAppCmdLineParam nodeXPathParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+};
+
+static xmlSecAppCmdLineParam nodeXPathParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--node-xpath",
-    NULL,   
+    NULL,
     "--node-xpath <expr>"
     "\n\tset the operation start point to the first node"
     "\n\tselected by the specified XPath expression",
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam dtdFileParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam dtdFileParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--dtd-file",
-    NULL,   
+    NULL,
     "--dtd-file <file>"
     "\n\tload the specified file as the DTD",
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam printDebugParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam printDebugParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--print-debug",
-    NULL,   
+    NULL,
     "--print-debug"
     "\n\tprint debug information to stdout",
     xmlSecAppCmdLineParamTypeFlag,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam printXmlDebugParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam printXmlDebugParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--print-xml-debug",
-    NULL,   
+    NULL,
     "--print-xml-debug"
     "\n\tprint debug information to stdout in xml format",
     xmlSecAppCmdLineParamTypeFlag,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam idAttrParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam idAttrParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--id-attr",
-    NULL,   
+    NULL,
     "--id-attr[:<attr-name>] [<node-namespace-uri>:]<node-name>"
     "\n\tadds attributes <attr-name> (default value \"id\") from all nodes"
     "\n\twith<node-name> and namespace <node-namespace-uri> to the list of"
@@ -512,12 +525,12 @@ static xmlSecAppCmdLineParam idAttrParam = {
     xmlSecAppCmdLineParamTypeString,
     xmlSecAppCmdLineParamFlagParamNameValue | xmlSecAppCmdLineParamFlagMultipleValues,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam xxeParam = { 
+static xmlSecAppCmdLineParam xxeParam = {
     xmlSecAppCmdLineTopicAll,
     "--xxe",
-    NULL,   
+    NULL,
     "--xxe"
     "\n\tenable External Entity resolution."
     "\n\tWARNING: this may allow the reading of arbitrary files and URLs,"
@@ -525,10 +538,10 @@ static xmlSecAppCmdLineParam xxeParam = {
     xmlSecAppCmdLineParamTypeFlag,
     xmlSecAppCmdLineParamFlagNone,
     NULL
-};    
+};
 
-static xmlSecAppCmdLineParam urlMapParam = { 
-    xmlSecAppCmdLineTopicDSigCommon | 
+static xmlSecAppCmdLineParam urlMapParam = {
+    xmlSecAppCmdLineTopicDSigCommon |
     xmlSecAppCmdLineTopicEncCommon,
     "--url-map",
     NULL,
@@ -546,7 +559,7 @@ static xmlSecAppCmdLineParam urlMapParam = {
  *
  ***************************************************************/
 #ifndef XMLSEC_NO_XMLDSIG
-static xmlSecAppCmdLineParam ignoreManifestsParam = { 
+static xmlSecAppCmdLineParam ignoreManifestsParam = {
     xmlSecAppCmdLineTopicDSigCommon,
     "--ignore-manifests",
     NULL,
@@ -557,7 +570,7 @@ static xmlSecAppCmdLineParam ignoreManifestsParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam storeReferencesParam = { 
+static xmlSecAppCmdLineParam storeReferencesParam = {
     xmlSecAppCmdLineTopicDSigCommon,
     "--store-references",
     NULL,
@@ -569,7 +582,7 @@ static xmlSecAppCmdLineParam storeReferencesParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam storeSignaturesParam = { 
+static xmlSecAppCmdLineParam storeSignaturesParam = {
     xmlSecAppCmdLineTopicDSigCommon,
     "--store-signatures",
     NULL,
@@ -581,7 +594,7 @@ static xmlSecAppCmdLineParam storeSignaturesParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam enabledRefUrisParam = { 
+static xmlSecAppCmdLineParam enabledRefUrisParam = {
     xmlSecAppCmdLineTopicDSigCommon,
     "--enabled-reference-uris",
     NULL,
@@ -594,7 +607,7 @@ static xmlSecAppCmdLineParam enabledRefUrisParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam enableVisa3DHackParam = { 
+static xmlSecAppCmdLineParam enableVisa3DHackParam = {
     xmlSecAppCmdLineTopicDSigCommon,
     "--enable-visa3d-hack",
     NULL,
@@ -616,7 +629,7 @@ static xmlSecAppCmdLineParam enableVisa3DHackParam = {
  *
  ***************************************************************/
 #ifndef XMLSEC_NO_XMLENC
-static xmlSecAppCmdLineParam enabledCipherRefUrisParam = { 
+static xmlSecAppCmdLineParam enabledCipherRefUrisParam = {
     xmlSecAppCmdLineTopicEncCommon,
     "--enabled-cipher-reference-uris",
     NULL,
@@ -629,7 +642,7 @@ static xmlSecAppCmdLineParam enabledCipherRefUrisParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam binaryDataParam = { 
+static xmlSecAppCmdLineParam binaryDataParam = {
     xmlSecAppCmdLineTopicEncEncrypt,
     "--binary-data",
     "--binary",
@@ -640,7 +653,7 @@ static xmlSecAppCmdLineParam binaryDataParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam xmlDataParam = { 
+static xmlSecAppCmdLineParam xmlDataParam = {
     xmlSecAppCmdLineTopicEncEncrypt,
     "--xml-data",
     NULL,
@@ -658,8 +671,8 @@ static xmlSecAppCmdLineParam xmlDataParam = {
  * X509 params
  *
  ***************************************************************/
-#ifndef XMLSEC_NO_X509    
-static xmlSecAppCmdLineParam pkcs12Param = { 
+#ifndef XMLSEC_NO_X509
+static xmlSecAppCmdLineParam pkcs12Param = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pkcs12",
     NULL,
@@ -681,7 +694,7 @@ static xmlSecAppCmdLineParam pkcs12PersistParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pubkeyCertParam = { 
+static xmlSecAppCmdLineParam pubkeyCertParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pubkey-cert-pem",
     "--pubkey-cert",
@@ -692,7 +705,7 @@ static xmlSecAppCmdLineParam pubkeyCertParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam pubkeyCertDerParam = { 
+static xmlSecAppCmdLineParam pubkeyCertDerParam = {
     xmlSecAppCmdLineTopicKeysMngr,
     "--pubkey-cert-der",
     NULL,
@@ -703,7 +716,7 @@ static xmlSecAppCmdLineParam pubkeyCertDerParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam trustedParam = { 
+static xmlSecAppCmdLineParam trustedParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--trusted-pem",
     "--trusted",
@@ -714,7 +727,7 @@ static xmlSecAppCmdLineParam trustedParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam untrustedParam = { 
+static xmlSecAppCmdLineParam untrustedParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--untrusted-pem",
     "--untrusted",
@@ -725,7 +738,7 @@ static xmlSecAppCmdLineParam untrustedParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam trustedDerParam = { 
+static xmlSecAppCmdLineParam trustedDerParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--trusted-der",
     NULL,
@@ -736,7 +749,7 @@ static xmlSecAppCmdLineParam trustedDerParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam untrustedDerParam = { 
+static xmlSecAppCmdLineParam untrustedDerParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--untrusted-der",
     NULL,
@@ -747,7 +760,7 @@ static xmlSecAppCmdLineParam untrustedDerParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam verificationTimeParam = { 
+static xmlSecAppCmdLineParam verificationTimeParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--verification-time",
     NULL,
@@ -759,10 +772,22 @@ static xmlSecAppCmdLineParam verificationTimeParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam depthParam = { 
+static xmlSecAppCmdLineParam verificationGmtTimeParam = {
+    xmlSecAppCmdLineTopicX509Certs,
+    "--verification-gmt-time",
+    NULL,
+    "--verification-gmt-time <time>"
+    "\n\tthe GMT time in \"YYYY-MM-DD HH:MM:SS\" format"
+    "\n\tused certificates verification",
+    xmlSecAppCmdLineParamTypeGmtTime,
+    xmlSecAppCmdLineParamFlagNone,
+    NULL
+};
+
+static xmlSecAppCmdLineParam depthParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--depth",
-    NULL,    
+    NULL,
     "--depth <number>"
     "\n\tmaximum certificates chain depth",
     xmlSecAppCmdLineParamTypeNumber,
@@ -770,10 +795,10 @@ static xmlSecAppCmdLineParam depthParam = {
     NULL
 };
 
-static xmlSecAppCmdLineParam X509SkipStrictChecksParam = { 
+static xmlSecAppCmdLineParam X509SkipStrictChecksParam = {
     xmlSecAppCmdLineTopicX509Certs,
     "--X509-skip-strict-checks",
-    NULL,    
+    NULL,
     "--X509-skip-strict-checks"
     "\n\tskip strict checking of X509 data",
     xmlSecAppCmdLineParamTypeFlag,
@@ -791,7 +816,7 @@ static xmlSecAppCmdLineParam X509DontVerifyCerts = {
     xmlSecAppCmdLineParamFlagNone,
     NULL
 };
-#endif /* XMLSEC_NO_X509 */    
+#endif /* XMLSEC_NO_X509 */
 
 static xmlSecAppCmdLineParamPtr parameters[] = {
     /* common dsig params */
@@ -809,18 +834,18 @@ static xmlSecAppCmdLineParamPtr parameters[] = {
     &xmlDataParam,
     &enabledCipherRefUrisParam,
 #endif /* XMLSEC_NO_XMLENC */
-             
+
     /* common dsig and enc parameters */
-    &sessionKeyParam,    
+    &sessionKeyParam,
     &outputParam,
     &printDebugParam,
-    &printXmlDebugParam,    
+    &printXmlDebugParam,
     &dtdFileParam,
     &nodeIdParam,
     &nodeNameParam,
     &nodeXPathParam,
     &idAttrParam,
-    
+
     /* Keys Manager params */
     &enabledKeyDataParam,
     &enabledRetrievalMethodUrisParam,
@@ -832,15 +857,15 @@ static xmlSecAppCmdLineParamPtr parameters[] = {
     &pkcs8DerParam,
     &pubkeyParam,
     &pubkeyDerParam,
-#ifndef XMLSEC_NO_AES    
+#ifndef XMLSEC_NO_AES
     &aeskeyParam,
-#endif  /* XMLSEC_NO_AES */    
+#endif  /* XMLSEC_NO_AES */
 #ifndef XMLSEC_NO_DES
     &deskeyParam,
-#endif  /* XMLSEC_NO_DES */    
-#ifndef XMLSEC_NO_HMAC    
+#endif  /* XMLSEC_NO_DES */
+#ifndef XMLSEC_NO_HMAC
     &hmackeyParam,
-#endif  /* XMLSEC_NO_HMAC */    
+#endif  /* XMLSEC_NO_HMAC */
     &pwdParam,
 #ifndef XMLSEC_NO_X509
     &pkcs12Param,
@@ -852,11 +877,13 @@ static xmlSecAppCmdLineParamPtr parameters[] = {
     &trustedDerParam,
     &untrustedDerParam,
     &verificationTimeParam,
-    &depthParam,    
-    &X509SkipStrictChecksParam,    
+    &verificationGmtTimeParam,
+    &depthParam,
+    &X509SkipStrictChecksParam,
     &X509DontVerifyCerts,
-#endif /* XMLSEC_NO_X509 */    
-    
+#endif /* XMLSEC_NO_X509 */
+    &privkeyOpensslEngineParam,
+
     /* General configuration params */
     &cryptoParam,
     &cryptoConfigParam,
@@ -866,7 +893,7 @@ static xmlSecAppCmdLineParamPtr parameters[] = {
     &helpParam,
     &xxeParam,
     &urlMapParam,
-        
+
     /* MUST be the last one */
     NULL
 };
@@ -876,8 +903,8 @@ typedef enum {
     xmlSecAppCommandHelp,
     xmlSecAppCommandListKeyData,
     xmlSecAppCommandCheckKeyData,
-    xmlSecAppCommandListTransforms,    
-    xmlSecAppCommandCheckTransforms,    
+    xmlSecAppCommandListTransforms,
+    xmlSecAppCommandCheckTransforms,
     xmlSecAppCommandVersion,
     xmlSecAppCommandKeys,
     xmlSecAppCommandSign,
@@ -902,10 +929,10 @@ static xmlSecAppXmlDataPtr      xmlSecAppXmlDataCreate          (const char* fil
 static void                     xmlSecAppXmlDataDestroy         (xmlSecAppXmlDataPtr data);
 
 
-static xmlSecAppCommand         xmlSecAppParseCommand           (const char* cmd, 
+static xmlSecAppCommand         xmlSecAppParseCommand           (const char* cmd,
                                                                  xmlSecAppCmdLineParamTopic* topics,
                                                                  xmlSecAppCommand* subCommand);
-static void                     xmlSecAppPrintHelp              (xmlSecAppCommand command, 
+static void                     xmlSecAppPrintHelp              (xmlSecAppCommand command,
                                                                  xmlSecAppCmdLineParamTopic topics);
 #define                         xmlSecAppPrintUsage()           xmlSecAppPrintHelp(xmlSecAppCommandUnknown, 0)
 static int                      xmlSecAppInit                   (void);
@@ -946,17 +973,19 @@ static int                      xmlSecAppWriteResult            (xmlDocPtr doc,
 static int                      xmlSecAppAddIDAttr              (xmlNodePtr cur,
                                                                  const xmlChar* attr,
                                                                  const xmlChar* node,
-                                                                 const xmlChar* nsHref);                                                                 
+                                                                 const xmlChar* nsHref);
 
 
 static int                      xmlSecAppInputMatchCallback     (char const * filename);
 static void*                    xmlSecAppInputOpenCallback      (char const * filename);
-static int                      xmlSecAppInputReadCallback      (void * context, 
-                                                                 char * buffer, 
+static int                      xmlSecAppInputReadCallback      (void * context,
+                                                                 char * buffer,
                                                                  int len);
 static int                      xmlSecAppInputCloseCallback     (void * context);
 
-
+#if defined(XMLSEC_WINDOWS) && defined(UNICODE) && defined(__MINGW32__)
+int wmain(int argc, wchar_t* argv[]);
+#endif /* defined(XMLSEC_WINDOWS) && defined(UNICODE) && defined(__MINGW32__) */
 
 xmlSecKeysMngrPtr gKeysMngr = NULL;
 int repeats = 1;
@@ -966,38 +995,42 @@ int block_network_io = 0;
 clock_t total_time = 0;
 const char* xmlsec_crypto = NULL;
 const char* tmp = NULL;
-const char** utf8_argv = NULL; /* TODO: this should be xmlChar** but it will break things downstream */
 
-#if defined(WIN32) && defined(UNICODE)
-int wmain(int argc, wchar_t *argv[ ], wchar_t *envp[ ]) {
-    UNREFERENCED_PARAMETER(envp);
-
-#else /* defined(WIN32) && defined(UNICODE) */
+#if defined(XMLSEC_WINDOWS) && defined(UNICODE)
+int wmain(int argc, wchar_t *argv[]) {
+#else /* defined(XMLSEC_WINDOWS) && defined(UNICODE) */
 int main(int argc, const char **argv) {
-#endif /* defined(WIN32) && defined(UNICODE) */
+#endif /* defined(XMLSEC_WINDOWS) && defined(UNICODE) */
+    const char** utf8_argv = NULL; /* TODO: this should be xmlChar** but it will break things downstream */
+#if defined(XMLSEC_WINDOWS)
+    size_t utf8_argv_size;
+#endif /* defined(XMLSEC_WINDOWS) */
+
     xmlSecAppCmdLineParamTopic cmdLineTopics;
     xmlSecAppCommand command, subCommand;
-    int pos, i;
+    int pos, ii;
     int res = 1;
 
-#if defined(WIN32)
+#if defined(XMLSEC_WINDOWS)
     /* convert command line to UTF8 from locale or UNICODE */
-    utf8_argv = (char**)xmlMalloc(sizeof(char*) * argc);
+    utf8_argv_size = sizeof(char*) * (size_t)argc;
+    utf8_argv = (const char**)xmlMalloc(utf8_argv_size);
     if(utf8_argv == NULL) {
-        fprintf(stderr, "Error: can not allocate memory (%d bytes)\n", (int)sizeof(char*) * argc);
+        fprintf(stderr, "Error: can not allocate memory (" XMLSEC_SIZE_T_FMT " bytes)\n",
+            utf8_argv_size);
         goto fail;
     }
-    memset((char**)utf8_argv, 0, sizeof(char*) * argc);
-    for(i = 0; i < argc; ++i) {
-        utf8_argv[i] = (const char*)xmlSecWin32ConvertTstrToUtf8(argv[i]);
-        if(utf8_argv[i] == NULL) {
-            fprintf(stderr, "Error: can not convert command line parameter at position %d to UTF8\n", i);
+    memset((char**)utf8_argv, 0, utf8_argv_size);
+    for(ii = 0; ii < argc; ++ii) {
+        utf8_argv[ii] = (const char*)xmlSecWin32ConvertTstrToUtf8(argv[ii]);
+        if(utf8_argv[ii] == NULL) {
+            fprintf(stderr, "Error: can not convert command line parameter at position %d to UTF8\n", ii);
             goto fail;
         }
     }
-#else /* defined(WIN32) */
+#else /* defined(XMLSEC_WINDOWS) */
     utf8_argv = argv;
-#endif /* defined(WIN32) */
+#endif /* defined(XMLSEC_WINDOWS) */
 
     /* read the command (first argument) */
     if(argc < 2) {
@@ -1029,7 +1062,7 @@ int main(int argc, const char **argv) {
         goto fail;
     }
 
-    /* is it a help request? */    
+    /* is it a help request? */
     if(xmlSecAppCmdLineParamIsSet(&helpParam)) {
         xmlSecAppPrintHelp(command, cmdLineTopics);
         goto success;
@@ -1071,24 +1104,24 @@ int main(int argc, const char **argv) {
         fprintf(stderr, "Error: initialization failed\n");
         xmlSecAppPrintUsage();
         goto fail;
-    }    
-    
+    }
+
     /* load keys */
     if(xmlSecAppLoadKeys() < 0) {
         fprintf(stderr, "Error: keys manager creation failed\n");
         xmlSecAppPrintUsage();
         goto fail;
     }
-    
+
     /* enable XXE? */
     if(xmlSecAppCmdLineParamIsSet(&xxeParam)) {
         xmlSecSetExternalEntityLoader( NULL );     // reset to libxml2's default handler
     }
 
     /* get the "repeats" number */
-    if(xmlSecAppCmdLineParamIsSet(&repeatParam) && 
+    if(xmlSecAppCmdLineParamIsSet(&repeatParam) &&
        (xmlSecAppCmdLineParamGetInt(&repeatParam, 1) > 0)) {
-       
+
         repeats = xmlSecAppCmdLineParamGetInt(&repeatParam, 1);
     }
 
@@ -1099,49 +1132,49 @@ int main(int argc, const char **argv) {
             xmlSecAppListKeyData();
             break;
         case xmlSecAppCommandCheckKeyData:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppCheckKeyData(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: key data \"%s\" not found\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppCheckKeyData(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: key data \"%s\" not found\n", utf8_argv[ii]);
                     goto fail;
                 } else {
-                    fprintf(stdout, "Key data \"%s\" found\n", utf8_argv[i]);
+                    fprintf(stdout, "Key data \"%s\" found\n", utf8_argv[ii]);
                 }
             }
             break;
         case xmlSecAppCommandListTransforms:
             xmlSecAppListTransforms();
-            break;          
+            break;
         case xmlSecAppCommandCheckTransforms:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppCheckTransform(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: transform \"%s\" not found\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppCheckTransform(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: transform \"%s\" not found\n", utf8_argv[ii]);
                     goto fail;
                 } else {
-                    fprintf(stdout, "Transforms \"%s\" found\n", utf8_argv[i]);
+                    fprintf(stdout, "Transforms \"%s\" found\n", utf8_argv[ii]);
                 }
             }
-            break;          
+            break;
         case xmlSecAppCommandKeys:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppCryptoSimpleKeysMngrSave(gKeysMngr, utf8_argv[i], xmlSecKeyDataTypeAny) < 0) {
-                    fprintf(stderr, "Error: failed to save keys to file \"%s\"\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppCryptoSimpleKeysMngrSave(gKeysMngr, utf8_argv[ii], xmlSecKeyDataTypeAny) < 0) {
+                    fprintf(stderr, "Error: failed to save keys to file \"%s\"\n", utf8_argv[ii]);
                     goto fail;
                 }
             }
             break;
 #ifndef XMLSEC_NO_XMLDSIG
         case xmlSecAppCommandSign:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppSignFile(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: failed to sign file \"%s\"\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppSignFile(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: failed to sign file \"%s\"\n", utf8_argv[ii]);
                     goto fail;
                 }
             }
             break;
         case xmlSecAppCommandVerify:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppVerifyFile(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: failed to verify file \"%s\"\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppVerifyFile(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: failed to verify file \"%s\"\n", utf8_argv[ii]);
                     goto fail;
                 }
             }
@@ -1158,17 +1191,17 @@ int main(int argc, const char **argv) {
 
 #ifndef XMLSEC_NO_XMLENC
         case xmlSecAppCommandEncrypt:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppEncryptFile(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: failed to encrypt file with template \"%s\"\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppEncryptFile(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: failed to encrypt file with template \"%s\"\n", utf8_argv[ii]);
                     goto fail;
                 }
             }
             break;
         case xmlSecAppCommandDecrypt:
-            for(i = pos; i < argc; ++i) {
-                if(xmlSecAppDecryptFile(utf8_argv[i]) < 0) {
-                    fprintf(stderr, "Error: failed to decrypt file \"%s\"\n", utf8_argv[i]);
+            for(ii = pos; ii < argc; ++ii) {
+                if(xmlSecAppDecryptFile(utf8_argv[ii]) < 0) {
+                    fprintf(stderr, "Error: failed to decrypt file \"%s\"\n", utf8_argv[ii]);
                     goto fail;
                 }
             }
@@ -1184,18 +1217,20 @@ int main(int argc, const char **argv) {
 #endif /* XMLSEC_NO_XMLENC */
 
         default:
-            fprintf(stderr, "Error: invalid command %d\n", command);
+            fprintf(stderr, "Error: invalid command %d\n", (int)command);
             xmlSecAppPrintUsage();
             goto fail;
         }
     }
 
     /* print perf stats results */
-    if(xmlSecAppCmdLineParamIsSet(&repeatParam) && 
+    if(xmlSecAppCmdLineParamIsSet(&repeatParam) &&
        (xmlSecAppCmdLineParamGetInt(&repeatParam, 1) > 0)) {
-       
+        long double msecs;
+
         repeats = xmlSecAppCmdLineParamGetInt(&repeatParam, 1);
-        fprintf(stderr, "Executed %d tests in %ld msec\n", repeats, (1000 * total_time) / CLOCKS_PER_SEC);    
+        msecs = (1000 * total_time) / (long double)CLOCKS_PER_SEC;
+        fprintf(stderr, "Executed %d tests in %.2Lf msec\n", repeats, msecs);
     }
 
     goto success;
@@ -1208,30 +1243,30 @@ fail:
     }
     xmlSecAppShutdown();
     xmlSecAppCmdLineParamsListClean(parameters);
-#if defined(WIN32)
+#if defined(XMLSEC_WINDOWS)
     if(utf8_argv != NULL) {
-        for(i = 0; i < argc; ++i) {
-           if(utf8_argv[i] != NULL) {
-               xmlFree(BAD_CAST utf8_argv[i]);
-               utf8_argv[i] = NULL;
+        for(ii = 0; ii < argc; ++ii) {
+           if(utf8_argv[ii] != NULL) {
+               xmlFree(BAD_CAST utf8_argv[ii]);
+               utf8_argv[ii] = NULL;
            }
         }
         xmlFree(BAD_CAST utf8_argv);
         utf8_argv = NULL;
     }
-#endif /* defined(WIN32) */
+#endif /* defined(XMLSEC_WINDOWS) */
     return(res);
 }
 
 
 #ifndef XMLSEC_NO_XMLDSIG
-static int 
+static int
 xmlSecAppSignFile(const char* filename) {
     xmlSecAppXmlDataPtr data = NULL;
     xmlSecDSigCtx dsigCtx;
     clock_t start_time;
     int res = -1;
-    
+
     if(filename == NULL) {
         return(-1);
     }
@@ -1253,18 +1288,18 @@ xmlSecAppSignFile(const char* filename) {
         goto done;
     }
 
-    
+
     /* sign */
     start_time = clock();
     if(xmlSecDSigCtxSign(&dsigCtx, data->startNode) < 0) {
         fprintf(stderr,"Error: signature failed \n");
         goto done;
     }
-    total_time += clock() - start_time;    
+    total_time += clock() - start_time;
 
-    if(repeats <= 1) { 
+    if(repeats <= 1) {
         FILE* f;
-        
+
         f = xmlSecAppOpenFile(xmlSecAppCmdLineParamGetString(&outputParam));
         if(f == NULL) {
             fprintf(stderr,"Error: failed to open output file \"%s\"\n",
@@ -1288,13 +1323,13 @@ done:
     return(res);
 }
 
-static int 
+static int
 xmlSecAppVerifyFile(const char* filename) {
     xmlSecAppXmlDataPtr data = NULL;
     xmlSecDSigCtx dsigCtx;
     clock_t start_time;
     int res = -1;
-    
+
     if(filename == NULL) {
         return(-1);
     }
@@ -1307,7 +1342,7 @@ xmlSecAppVerifyFile(const char* filename) {
         fprintf(stderr, "Error: dsig context preparation failed\n");
         goto done;
     }
-    
+
     /* parse template and select start node */
     data = xmlSecAppXmlDataCreate(filename, xmlSecNodeSignature, xmlSecDSigNs);
     if(data == NULL) {
@@ -1321,9 +1356,9 @@ xmlSecAppVerifyFile(const char* filename) {
         fprintf(stderr,"Error: signature failed \n");
         goto done;
     }
-    total_time += clock() - start_time;    
+    total_time += clock() - start_time;
 
-    if((repeats <= 1) && (dsigCtx.status != xmlSecDSigStatusSucceeded)){ 
+    if((repeats <= 1) && (dsigCtx.status != xmlSecDSigStatusSucceeded)){
         /* return an error if signature does not match */
         goto done;
     }
@@ -1335,7 +1370,7 @@ done:
         xmlSecDSigReferenceCtxPtr dsigRefCtx;
         xmlSecSize good, i, size;
         FILE* f;
-        
+
         f = xmlSecAppOpenFile(xmlSecAppCmdLineParamGetString(&outputParam));
         if(f == NULL) {
             fprintf(stderr,"Error: failed to open output file \"%s\"\n",
@@ -1354,7 +1389,7 @@ done:
             case xmlSecDSigStatusInvalid:
                 fprintf(stderr, "FAIL\n");
                 break;
-        }    
+        }
 
         /* print stats about # of good/bad references/manifests */
         size = xmlSecPtrListGetSize(&(dsigCtx.signedInfoReferences));
@@ -1368,7 +1403,8 @@ done:
                 ++good;
             }
         }
-        fprintf(stderr, "SignedInfo References (ok/all): %d/%d\n", good, size);
+        fprintf(stderr, "SignedInfo References (ok/all): " XMLSEC_SIZE_FMT "/" XMLSEC_SIZE_FMT "\n",
+            good, size);
 
         size = xmlSecPtrListGetSize(&(dsigCtx.manifestReferences));
         for(i = good = 0; i < size; ++i) {
@@ -1381,7 +1417,8 @@ done:
                 ++good;
             }
         }
-        fprintf(stderr, "Manifests References (ok/all): %d/%d\n", good, size);
+        fprintf(stderr, "Manifests References (ok/all): " XMLSEC_SIZE_FMT "/" XMLSEC_SIZE_FMT "\n",
+            good, size);
 
         xmlSecAppPrintDSigCtx(&dsigCtx);
     }
@@ -1393,14 +1430,14 @@ done:
 }
 
 #ifndef XMLSEC_NO_TMPL_TEST
-static int 
+static int
 xmlSecAppSignTmpl(void) {
     xmlDocPtr doc = NULL;
     xmlNodePtr cur;
     xmlSecDSigCtx dsigCtx;
     clock_t start_time;
     int res = -1;
-        
+
     if(xmlSecDSigCtxInitialize(&dsigCtx, gKeysMngr) < 0) {
         fprintf(stderr, "Error: dsig context initialization failed\n");
         return(-1);
@@ -1409,14 +1446,14 @@ xmlSecAppSignTmpl(void) {
         fprintf(stderr, "Error: dsig context preparation failed\n");
         goto done;
     }
-    
+
     /* prepare template */
     doc = xmlNewDoc(BAD_CAST "1.0");
     if(doc == NULL) {
         fprintf(stderr, "Error: failed to create doc\n");
         goto done;
     }
-    
+
     cur = xmlSecTmplSignatureCreate(doc, xmlSecTransformInclC14NId,
                                     xmlSecTransformHmacSha1Id, NULL);
     if(cur == NULL) {
@@ -1435,28 +1472,28 @@ xmlSecAppSignTmpl(void) {
         fprintf(stderr, "Error: failed to set hmac length\n");
         goto done;
     }
-    
-    cur = xmlSecTmplSignatureAddReference(xmlDocGetRootElement(doc), 
-                                    xmlSecTransformSha1Id, 
+
+    cur = xmlSecTmplSignatureAddReference(xmlDocGetRootElement(doc),
+                                    xmlSecTransformSha1Id,
                                     BAD_CAST "ref1", NULL, NULL);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to add Reference node\n");
         goto done;
     }
-    
+
     cur = xmlSecTmplReferenceAddTransform(cur, xmlSecTransformXPath2Id);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to add XPath transform\n");
         goto done;
     }
-    
-    if(xmlSecTmplTransformAddXPath2(cur, BAD_CAST "intersect", 
+
+    if(xmlSecTmplTransformAddXPath2(cur, BAD_CAST "intersect",
                                     BAD_CAST "//*[@Id='object1']", NULL) < 0) {
         fprintf(stderr, "Error: failed to set XPath expression\n");
-        goto done;    
+        goto done;
     }
-    
-    cur = xmlSecTmplSignatureAddObject(xmlDocGetRootElement(doc), 
+
+    cur = xmlSecTmplSignatureAddObject(xmlDocGetRootElement(doc),
                                     BAD_CAST "object1", NULL, NULL);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to add Object node\n");
@@ -1468,24 +1505,24 @@ xmlSecAppSignTmpl(void) {
     cur = xmlSecTmplSignatureEnsureKeyInfo(xmlDocGetRootElement(doc), NULL);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to add KeyInfo node\n");
-        goto done;      
+        goto done;
     }
     if(xmlSecTmplKeyInfoAddKeyName(cur, NULL) == NULL) {
         fprintf(stderr, "Error: failed to add KeyName node\n");
-        goto done;      
+        goto done;
     }
-    
+
     /* sign */
     start_time = clock();
     if(xmlSecDSigCtxSign(&dsigCtx, xmlDocGetRootElement(doc)) < 0) {
         fprintf(stderr,"Error: signature failed \n");
         goto done;
     }
-    total_time += clock() - start_time;    
+    total_time += clock() - start_time;
 
-    if(repeats <= 1) { 
+    if(repeats <= 1) {
         FILE* f;
-        
+
         f = xmlSecAppOpenFile(xmlSecAppCmdLineParamGetString(&outputParam));
         if(f == NULL) {
             fprintf(stderr,"Error: failed to open output file \"%s\"\n",
@@ -1535,21 +1572,21 @@ xmlSecAppPrepareDSigCtx(xmlSecDSigCtxPtr dsigCtx) {
 
     /* set dsig params */
     if(xmlSecAppCmdLineParamIsSet(&ignoreManifestsParam)) {
-        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_IGNORE_MANIFESTS; 
+        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_IGNORE_MANIFESTS;
     }
     if(xmlSecAppCmdLineParamIsSet(&storeReferencesParam)) {
         dsigCtx->flags |= XMLSEC_DSIG_FLAGS_STORE_SIGNEDINFO_REFERENCES |
-                          XMLSEC_DSIG_FLAGS_STORE_MANIFEST_REFERENCES; 
+                          XMLSEC_DSIG_FLAGS_STORE_MANIFEST_REFERENCES;
         print_debug = 1;
     }
     if(xmlSecAppCmdLineParamIsSet(&storeSignaturesParam)) {
-        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_STORE_SIGNATURE; 
+        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_STORE_SIGNATURE;
         print_debug = 1;
     }
     if(xmlSecAppCmdLineParamIsSet(&enableVisa3DHackParam)) {
-        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_USE_VISA3D_HACK; 
+        dsigCtx->flags |= XMLSEC_DSIG_FLAGS_USE_VISA3D_HACK;
     }
-    
+
     if(xmlSecAppCmdLineParamGetStringList(&enabledRefUrisParam) != NULL) {
         dsigCtx->enabledReferenceUris = xmlSecAppGetUriType(
                     xmlSecAppCmdLineParamGetStringList(&enabledRefUrisParam));
@@ -1564,7 +1601,7 @@ xmlSecAppPrepareDSigCtx(xmlSecDSigCtxPtr dsigCtx) {
 }
 
 static void
-xmlSecAppPrintDSigCtx(xmlSecDSigCtxPtr dsigCtx) { 
+xmlSecAppPrintDSigCtx(xmlSecDSigCtxPtr dsigCtx) {
     if(dsigCtx == NULL) {
         return;
     }
@@ -1573,8 +1610,8 @@ xmlSecAppPrintDSigCtx(xmlSecDSigCtxPtr dsigCtx) {
     if((print_debug != 0) || xmlSecAppCmdLineParamIsSet(&printDebugParam)) {
         xmlSecDSigCtxDebugDump(dsigCtx, stdout);
     }
-    
-    if(xmlSecAppCmdLineParamIsSet(&printXmlDebugParam)) {          
+
+    if(xmlSecAppCmdLineParamIsSet(&printXmlDebugParam)) {
         xmlSecDSigCtxDebugXmlDump(dsigCtx, stdout);
     }
 }
@@ -1582,7 +1619,7 @@ xmlSecAppPrintDSigCtx(xmlSecDSigCtxPtr dsigCtx) {
 #endif /* XMLSEC_NO_XMLDSIG */
 
 #ifndef XMLSEC_NO_XMLENC
-static int 
+static int
 xmlSecAppEncryptFile(const char* filename) {
     xmlSecAppXmlDataPtr data = NULL;
     xmlSecEncCtx encCtx;
@@ -1607,48 +1644,48 @@ xmlSecAppEncryptFile(const char* filename) {
     /* parse doc and find template node */
     doc = xmlSecParseFile(filename);
     if(doc == NULL) {
-        fprintf(stderr, "Error: failed to parse xml file \"%s\"\n", 
+        fprintf(stderr, "Error: failed to parse xml file \"%s\"\n",
                 filename);
         goto done;
     }
     startTmplNode = xmlSecFindNode(xmlDocGetRootElement(doc), xmlSecNodeEncryptedData, xmlSecEncNs);
     if(startTmplNode == NULL) {
-        fprintf(stderr, "Error: failed to find default node with name=\"%s\"\n", 
+        fprintf(stderr, "Error: failed to find default node with name=\"%s\"\n",
                 xmlSecNodeEncryptedData);
         goto done;
     }
 
     if(xmlSecAppCmdLineParamGetString(&binaryDataParam) != NULL) {
         /* encrypt */
-        start_time = clock();            
+        start_time = clock();
         if(xmlSecEncCtxUriEncrypt(&encCtx, startTmplNode, BAD_CAST xmlSecAppCmdLineParamGetString(&binaryDataParam)) < 0) {
-            fprintf(stderr, "Error: failed to encrypt file \"%s\"\n", 
+            fprintf(stderr, "Error: failed to encrypt file \"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&binaryDataParam));
             goto done;
         }
-        total_time += clock() - start_time;    
+        total_time += clock() - start_time;
     } else if(xmlSecAppCmdLineParamGetString(&xmlDataParam) != NULL) {
         /* parse file and select node for encryption */
         data = xmlSecAppXmlDataCreate(xmlSecAppCmdLineParamGetString(&xmlDataParam), NULL, NULL);
         if(data == NULL) {
-            fprintf(stderr, "Error: failed to load file \"%s\"\n", 
+            fprintf(stderr, "Error: failed to load file \"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&xmlDataParam));
             goto done;
         }
 
         /* encrypt */
-        start_time = clock();            
+        start_time = clock();
         if(xmlSecEncCtxXmlEncrypt(&encCtx, startTmplNode, data->startNode) < 0) {
-            fprintf(stderr, "Error: failed to encrypt xml file \"%s\"\n", 
+            fprintf(stderr, "Error: failed to encrypt xml file \"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&xmlDataParam));
             goto done;
         }
-        total_time += clock() - start_time;    
+        total_time += clock() - start_time;
     } else {
         fprintf(stderr, "Error: encryption data not specified (use \"--xml\" or \"--binary\" options)\n");
         goto done;
     }
-    
+
     /* print out result only once per execution */
     if(repeats <= 1) {
         if(encCtx.resultReplaced) {
@@ -1659,9 +1696,9 @@ xmlSecAppEncryptFile(const char* filename) {
             if(xmlSecAppWriteResult(NULL, encCtx.result) < 0) {
                 goto done;
             }
-        }       
+        }
     }
-    res = 0;    
+    res = 0;
 
 done:
     /* print debug info if requested */
@@ -1679,7 +1716,7 @@ done:
     return(res);
 }
 
-static int 
+static int
 xmlSecAppDecryptFile(const char* filename) {
     xmlSecAppXmlDataPtr data = NULL;
     xmlSecEncCtx encCtx;
@@ -1706,13 +1743,13 @@ xmlSecAppDecryptFile(const char* filename) {
         goto done;
     }
 
-    start_time = clock();  
+    start_time = clock();
     if(xmlSecEncCtxDecrypt(&encCtx, data->startNode) < 0) {
         fprintf(stderr, "Error: failed to decrypt file\n");
         goto done;
     }
-    total_time += clock() - start_time;    
-    
+    total_time += clock() - start_time;
+
     /* print out result only once per execution */
     if(repeats <= 1) {
         if(encCtx.resultReplaced) {
@@ -1723,13 +1760,13 @@ xmlSecAppDecryptFile(const char* filename) {
             if(xmlSecAppWriteResult(NULL, encCtx.result) < 0) {
                 goto done;
             }
-        }       
+        }
     }
-    res = 0;    
+    res = 0;
 
 done:
     /* print debug info if requested */
-    if(repeats <= 1) { 
+    if(repeats <= 1) {
         xmlSecAppPrintEncCtx(&encCtx);
     }
     xmlSecEncCtxFinalize(&encCtx);
@@ -1741,7 +1778,7 @@ done:
 }
 
 #ifndef XMLSEC_NO_TMPL_TEST
-static int 
+static int
 xmlSecAppEncryptTmpl(void) {
     const xmlChar data[] = "Hello, World!";
     xmlSecEncCtx encCtx;
@@ -1766,39 +1803,39 @@ xmlSecAppEncryptTmpl(void) {
         goto done;
     }
 
-    cur = xmlSecTmplEncDataCreate(doc, xmlSecTransformDes3CbcId, 
+    cur = xmlSecTmplEncDataCreate(doc, xmlSecTransformDes3CbcId,
                                   NULL, NULL, NULL, NULL);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to encryption template\n");
-        goto done;      
+        goto done;
     }
     xmlDocSetRootElement(doc, cur);
 
     if(xmlSecTmplEncDataEnsureCipherValue(xmlDocGetRootElement(doc)) == NULL) {
         fprintf(stderr, "Error: failed to add CipherValue node\n");
-        goto done;      
+        goto done;
     }
 
     /* add key information */
     cur = xmlSecTmplEncDataEnsureKeyInfo(xmlDocGetRootElement(doc), NULL);
     if(cur == NULL) {
         fprintf(stderr, "Error: failed to add KeyInfo node\n");
-        goto done;      
+        goto done;
     }
     if(xmlSecTmplKeyInfoAddKeyName(cur, NULL) == NULL) {
         fprintf(stderr, "Error: failed to add KeyName node\n");
-        goto done;      
+        goto done;
     }
 
     /* encrypt */
-    start_time = clock();            
-    if(xmlSecEncCtxBinaryEncrypt(&encCtx, xmlDocGetRootElement(doc), 
-                                (const xmlSecByte*)data, xmlStrlen(data)) < 0) {
+    start_time = clock();
+    if(xmlSecEncCtxBinaryEncrypt(&encCtx, xmlDocGetRootElement(doc),
+                                (const xmlSecByte*)data, xmlSecStrlen(data)) < 0) {
         fprintf(stderr, "Error: failed to encrypt data\n");
-        goto done;      
+        goto done;
     }
-    total_time += clock() - start_time;    
-    
+    total_time += clock() - start_time;
+
     /* print out result only once per execution */
     if(repeats <= 1) {
         if(encCtx.resultReplaced) {
@@ -1809,9 +1846,9 @@ xmlSecAppEncryptTmpl(void) {
             if(xmlSecAppWriteResult(NULL, encCtx.result) < 0) {
                 goto done;
             }
-        }       
+        }
     }
-    res = 0;    
+    res = 0;
 
 done:
     /* print debug info if requested */
@@ -1827,7 +1864,7 @@ done:
 #endif /* XMLSEC_NO_TMPL_TEST */
 
 static int
-xmlSecAppPrepareEncCtx(xmlSecEncCtxPtr encCtx) {    
+xmlSecAppPrepareEncCtx(xmlSecEncCtxPtr encCtx) {
     if(encCtx == NULL) {
         fprintf(stderr, "Error: enc context is null\n");
         return(-1);
@@ -1861,31 +1898,31 @@ xmlSecAppPrepareEncCtx(xmlSecEncCtxPtr encCtx) {
     return(0);
 }
 
-static void 
+static void
 xmlSecAppPrintEncCtx(xmlSecEncCtxPtr encCtx) {
     if(encCtx == NULL) {
         return;
     }
-    
+
     /* print debug info if requested */
     if((print_debug != 0) || xmlSecAppCmdLineParamIsSet(&printDebugParam)) {
         xmlSecEncCtxDebugDump(encCtx, stdout);
     }
-    
-    if(xmlSecAppCmdLineParamIsSet(&printXmlDebugParam)) {          
+
+    if(xmlSecAppCmdLineParamIsSet(&printXmlDebugParam)) {
         xmlSecEncCtxDebugXmlDump(encCtx, stdout);
     }
 }
 
 #endif /* XMLSEC_NO_XMLENC */
 
-static void 
+static void
 xmlSecAppListKeyData(void) {
     fprintf(stdout, "Registered key data klasses:\n");
     xmlSecKeyDataIdListDebugDump(xmlSecKeyDataIdsGet(), stdout);
 }
 
-static int 
+static int
 xmlSecAppCheckKeyData(const char * name) {
     if(xmlSecKeyDataIdListFindByName(xmlSecKeyDataIdsGet(), BAD_CAST name, xmlSecKeyDataUsageAny) == xmlSecKeyDataIdUnknown) {
         return -1;
@@ -1893,13 +1930,13 @@ xmlSecAppCheckKeyData(const char * name) {
     return 0;
 }
 
-static void 
+static void
 xmlSecAppListTransforms(void) {
     fprintf(stdout, "Registered transform klasses:\n");
     xmlSecTransformIdListDebugDump(xmlSecTransformIdsGet(), stdout);
 }
 
-static int 
+static int
 xmlSecAppCheckTransform(const char * name) {
     if(xmlSecTransformIdListFindByName(xmlSecTransformIdsGet(), BAD_CAST name, xmlSecTransformUsageAny) == xmlSecTransformIdUnknown) {
         return -1;
@@ -1907,13 +1944,13 @@ xmlSecAppCheckTransform(const char * name) {
     return 0;
 }
 
-static int 
+static int
 xmlSecAppPrepareKeyInfoReadCtx(xmlSecKeyInfoCtxPtr keyInfoCtx) {
     xmlSecAppCmdLineValuePtr value;
     int ret;
     xmlSecKeyDataId dataId;
     const char* p;
-    
+
     if(keyInfoCtx == NULL) {
         fprintf(stderr, "Error: key info context is null\n");
         return(-1);
@@ -1922,6 +1959,9 @@ xmlSecAppPrepareKeyInfoReadCtx(xmlSecKeyInfoCtxPtr keyInfoCtx) {
 #ifndef XMLSEC_NO_X509
     if(xmlSecAppCmdLineParamIsSet(&verificationTimeParam)) {
         keyInfoCtx->certsVerificationTime = xmlSecAppCmdLineParamGetTime(&verificationTimeParam, 0);
+    }
+    if(xmlSecAppCmdLineParamIsSet(&verificationGmtTimeParam)) {
+        keyInfoCtx->certsVerificationTime = xmlSecAppCmdLineParamGetTime(&verificationGmtTimeParam, 0);
     }
     if(xmlSecAppCmdLineParamIsSet(&depthParam)) {
         keyInfoCtx->certsVerificationDepth = xmlSecAppCmdLineParamGetInt(&depthParam, 0);
@@ -1937,7 +1977,7 @@ xmlSecAppPrepareKeyInfoReadCtx(xmlSecKeyInfoCtxPtr keyInfoCtx) {
     /* read enabled key data list */
     for(value = enabledKeyDataParam.value; value != NULL; value = value->next) {
         if(value->strListValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     enabledKeyDataParam.fullName);
             return(-1);
         }
@@ -1970,14 +2010,14 @@ xmlSecAppPrepareKeyInfoReadCtx(xmlSecKeyInfoCtxPtr keyInfoCtx) {
     return(0);
 }
 
-static int 
+static int
 xmlSecAppLoadKeys(void) {
     xmlSecAppCmdLineValuePtr value;
-    
+
     if(gKeysMngr != NULL) {
         fprintf(stderr, "Error: keys manager already initialized.\n");
-        return(-1);     
-    }    
+        return(-1);
+    }
 
     /* create and initialize keys manager */
     gKeysMngr = xmlSecKeysMngrCreate();
@@ -1988,7 +2028,7 @@ xmlSecAppLoadKeys(void) {
     if(xmlSecAppCryptoSimpleKeysMngrInit(gKeysMngr) < 0) {
         fprintf(stderr, "Error: failed to initialize keys manager.\n");
         return(-1);
-    }    
+    }
 
     /* generate new key file */
     for(value = genKeyParam.value; value != NULL; value = value->next) {
@@ -1998,7 +2038,7 @@ xmlSecAppLoadKeys(void) {
         } else if(xmlSecAppCryptoSimpleKeysMngrKeyGenerate(gKeysMngr, value->strValue, value->paramNameValue) < 0) {
             fprintf(stderr, "Error: failed to generate key \"%s\".\n", value->strValue);
             return(-1);
-        }       
+        }
     }
 
     /* read all xml key files */
@@ -2009,69 +2049,69 @@ xmlSecAppLoadKeys(void) {
         } else if(xmlSecAppCryptoSimpleKeysMngrLoad(gKeysMngr, value->strValue) < 0) {
             fprintf(stderr, "Error: failed to load xml keys file \"%s\".\n", value->strValue);
             return(-1);
-        }       
+        }
     }
 
     /* read all private keys */
     for(value = privkeyParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     privkeyParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
-                    value->paramNameValue, 
+                    value->paramNameValue,
                     xmlSecKeyDataFormatPem) < 0) {
-            fprintf(stderr, "Error: failed to load private key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load private key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
     for(value = privkeyDerParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     privkeyDerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatDer) < 0) {
-            fprintf(stderr, "Error: failed to load private key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load private key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
     for(value = pkcs8PemParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pkcs8PemParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatPkcs8Pem) < 0) {
-            fprintf(stderr, "Error: failed to load private key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load private key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
     for(value = pkcs8DerParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pkcs8DerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatPkcs8Der) < 0) {
-            fprintf(stderr, "Error: failed to load private key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load private key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
@@ -2079,84 +2119,84 @@ xmlSecAppLoadKeys(void) {
 
     /* read all public keys */
     for(value = pubkeyParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pubkeyParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatPem) < 0) {
-            fprintf(stderr, "Error: failed to load public key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load public key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
     for(value = pubkeyDerParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pubkeyDerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatDer) < 0) {
-            fprintf(stderr, "Error: failed to load public key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load public key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
-#ifndef XMLSEC_NO_AES    
+#ifndef XMLSEC_NO_AES
     /* read all AES keys */
     for(value = aeskeyParam.value; value != NULL; value = value->next) {
         if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     aeskeyParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr,
                     "aes", value->strValue, value->paramNameValue) < 0) {
             fprintf(stderr, "Error: failed to load aes key from \"%s\".\n",
                     value->strValue);
             return(-1);
         }
     }
-#endif /* XMLSEC_NO_AES */ 
+#endif /* XMLSEC_NO_AES */
 
-#ifndef XMLSEC_NO_DES    
+#ifndef XMLSEC_NO_DES
     /* read all des keys */
     for(value = deskeyParam.value; value != NULL; value = value->next) {
         if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     deskeyParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr,
                     "des", value->strValue, value->paramNameValue) < 0) {
             fprintf(stderr, "Error: failed to load des key from \"%s\".\n",
                     value->strValue);
             return(-1);
         }
     }
-#endif /* XMLSEC_NO_DES */ 
+#endif /* XMLSEC_NO_DES */
 
-#ifndef XMLSEC_NO_HMAC    
+#ifndef XMLSEC_NO_HMAC
     /* read all hmac keys */
     for(value = hmackeyParam.value; value != NULL; value = value->next) {
         if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     hmackeyParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrBinaryKeyLoad(gKeysMngr,
                     "hmac", value->strValue, value->paramNameValue) < 0) {
             fprintf(stderr, "Error: failed to load hmac key from \"%s\".\n",
                     value->strValue);
             return(-1);
         }
     }
-#endif /* XMLSEC_NO_HMAC */ 
+#endif /* XMLSEC_NO_HMAC */
 
 #ifndef XMLSEC_NO_X509
     /* read all pkcs12 files */
@@ -2167,7 +2207,7 @@ xmlSecAppLoadKeys(void) {
         if(value->strValue == NULL) {
             fprintf(stderr, "Error: invalid value for option \"%s\".\n", pkcs12Param.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrPkcs12KeyLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrPkcs12KeyLoad(gKeysMngr,
                     value->strValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue) < 0) {
@@ -2182,7 +2222,7 @@ xmlSecAppLoadKeys(void) {
         if(value->strValue == NULL) {
             fprintf(stderr, "Error: invalid value for option \"%s\".\n", trustedParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr,
                     value->strValue, xmlSecKeyDataFormatPem,
                     xmlSecKeyDataTypeTrusted) < 0) {
             fprintf(stderr, "Error: failed to load trusted cert from \"%s\".\n",
@@ -2194,7 +2234,7 @@ xmlSecAppLoadKeys(void) {
         if(value->strValue == NULL) {
             fprintf(stderr, "Error: invalid value for option \"%s\".\n", trustedDerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr,
                     value->strValue, xmlSecKeyDataFormatDer,
                     xmlSecKeyDataTypeTrusted) < 0) {
             fprintf(stderr, "Error: failed to load trusted cert from \"%s\".\n",
@@ -2206,32 +2246,32 @@ xmlSecAppLoadKeys(void) {
 
     /* read all public keys in certs */
     for(value = pubkeyCertParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pubkeyCertParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatCertPem) < 0) {
-            fprintf(stderr, "Error: failed to load public key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load public key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
     }
 
     for(value = pubkeyCertDerParam.value; value != NULL; value = value->next) {
-        if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+        if(value->strListValue == NULL) {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     pubkeyCertDerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr, 
-                    value->strListValue, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
                     xmlSecAppCmdLineParamGetString(&pwdParam),
                     value->paramNameValue,
                     xmlSecKeyDataFormatCertDer) < 0) {
-            fprintf(stderr, "Error: failed to load public key from \"%s\".\n", 
+            fprintf(stderr, "Error: failed to load public key from \"%s\".\n",
                     value->strListValue);
             return(-1);
         }
@@ -2243,7 +2283,7 @@ xmlSecAppLoadKeys(void) {
         if(value->strValue == NULL) {
             fprintf(stderr, "Error: invalid value for option \"%s\".\n", untrustedParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr,
                     value->strValue, xmlSecKeyDataFormatPem,
                     xmlSecKeyDataTypeNone) < 0) {
             fprintf(stderr, "Error: failed to load untrusted cert from \"%s\".\n",
@@ -2255,7 +2295,7 @@ xmlSecAppLoadKeys(void) {
         if(value->strValue == NULL) {
             fprintf(stderr, "Error: invalid value for option \"%s\".\n", untrustedDerParam.fullName);
             return(-1);
-        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr, 
+        } else if(xmlSecAppCryptoSimpleKeysMngrCertLoad(gKeysMngr,
                     value->strValue, xmlSecKeyDataFormatDer,
                     xmlSecKeyDataTypeNone) < 0) {
             fprintf(stderr, "Error: failed to load untrusted cert from \"%s\".\n",
@@ -2264,7 +2304,29 @@ xmlSecAppLoadKeys(void) {
         }
     }
 
-#endif /* XMLSEC_NO_X509 */    
+#endif /* XMLSEC_NO_X509 */
+
+    for(value = privkeyOpensslEngineParam.value; value != NULL; value = value->next) {
+        /* we expect at least one parameter for the key's engine+id */
+        if(value->strListValue == NULL || value->strListValue[0] == '\0') {
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n", privkeyOpensslEngineParam.fullName);
+            return(-1);
+        }
+
+        /* the params format is: <openssl-engine>;<openssl-key-id>[,<crtfile>[,<crtfile>[...]]] */
+        if(xmlSecAppCryptoSimpleKeysMngrEngineKeyAndCertsLoad(gKeysMngr,
+                    value->strListValue,
+                    value->strListValue + strlen(value->strListValue) + 1,
+                    xmlSecAppCmdLineParamGetString(&pwdParam),
+                    value->paramNameValue,
+                    xmlSecKeyDataFormatEngine,
+                    xmlSecKeyDataFormatPem) < 0) {
+            fprintf(stderr, "Error: failed to load private key from \"%s\".\n",
+                    value->strListValue);
+            return(-1);
+        }
+    }
+
 
     return(0);
 }
@@ -2275,11 +2337,11 @@ xmlSecAppLoadKeys(void) {
 static int
 xmlSecAppInputMatchCallback(char const* filename) {
     xmlSecAppCmdLineValuePtr value;
-    
+
     if(filename == NULL) {
         return(0);
     }
-    
+
     for(value = urlMapParam.value; value != NULL; value = value->next) {
         if((value->strValue == NULL) || (value->paramNameValue == NULL)) {
             continue;
@@ -2321,22 +2383,22 @@ xmlSecAppInputMatchCallback(char const* filename) {
 static void*
 xmlSecAppInputOpenCallback(char const* filename) {
     xmlSecAppCmdLineValuePtr value;
-    
+
     if(filename == NULL) {
         return(NULL);
     }
-    
+
     for(value = urlMapParam.value; value != NULL; value = value->next) {
         if((value->strValue == NULL) || (value->paramNameValue == NULL)) {
             continue;
         }
         if(strcmp(filename, value->paramNameValue) == 0) {
             FILE * f = NULL;
-#ifdef WIN32
+#if defined(_MSC_VER)
             fopen_s(&f, value->strValue, "rb");
-#else /* WIN32 */
+#else /* defined(_MSC_VER) */
             f = fopen(value->strValue, "rb");
-#endif /* WIN32 */
+#endif /* defined(_MSC_VER) */
             if(f == NULL) {
                 fprintf(stdout, "Error: can not open file \"%s\" for url \"%s\"\n", value->strValue, filename);
                 return(NULL);
@@ -2355,13 +2417,13 @@ xmlSecAppInputReadCallback(void* context, char* buffer, int len) {
     FILE* f = (FILE*)context;
     size_t res;
 
-    if(f == NULL) {
+    if((f == NULL) || (len < 0)) {
         return(-1);
     }
     if(feof(f)) {
         return(0);
     }
-    res = fread(buffer, 1, len, f);
+    res = fread(buffer, 1, (size_t)len, f);
     if(ferror(f)) {
         return(-1);
     }
@@ -2395,33 +2457,33 @@ static xsltSecurityPrefsPtr xsltSecPrefs = NULL;
 static int
 xmlSecAppInit(void) {
     int ret;
-    
+
     if(intialized != 0) {
         return(0);
     }
     intialized = 1;
-    
-    /* Init libxml */     
+
+    /* Init libxml */
     xmlInitParser();
     LIBXML_TEST_VERSION
     xmlTreeIndentString = "\t";
 #ifndef XMLSEC_NO_XSLT
-    xmlIndentTreeOutput = 1; 
+    xmlIndentTreeOutput = 1;
 #endif /* XMLSEC_NO_XSLT */
-                
-    
+
+
     /* Init libxslt */
 #ifndef XMLSEC_NO_XSLT
     /* disable everything */
-    xsltSecPrefs = xsltNewSecurityPrefs(); 
+    xsltSecPrefs = xsltNewSecurityPrefs();
     xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_FILE,        xsltSecurityForbid);
     xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_FILE,       xsltSecurityForbid);
     xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_CREATE_DIRECTORY, xsltSecurityForbid);
     xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_READ_NETWORK,     xsltSecurityForbid);
     xsltSetSecurityPrefs(xsltSecPrefs,  XSLT_SECPREF_WRITE_NETWORK,    xsltSecurityForbid);
-    xsltSetDefaultSecurityPrefs(xsltSecPrefs); 
-#endif /* XMLSEC_NO_XSLT */                
-    
+    xsltSetDefaultSecurityPrefs(xsltSecPrefs);
+#endif /* XMLSEC_NO_XSLT */
+
     /* Init xmlsec */
     ret = xmlSecInit();
     if(ret < 0) {
@@ -2473,21 +2535,21 @@ xmlSecAppShutdown(void) {
     if(xmlSecAppCryptoShutdown() < 0) {
         fprintf(stderr, "Error: xmlsec crypto shutdown failed.\n");
     }
-    
+
     /* Shutdown xmlsec */
     if(xmlSecShutdown() < 0) {
         fprintf(stderr, "Error: xmlsec shutdown failed.\n");
     }
-    
+
     /* Shutdown libxslt/libxml */
 #ifndef XMLSEC_NO_XSLT
     xsltFreeSecurityPrefs(xsltSecPrefs);
-    xsltCleanupGlobals();            
+    xsltCleanupGlobals();
 #endif /* XMLSEC_NO_XSLT */
     xmlCleanupParser();
 }
 
-static xmlSecAppXmlDataPtr 
+static xmlSecAppXmlDataPtr
 xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, const xmlChar* defStartNodeNs) {
     xmlSecAppCmdLineValuePtr value;
     xmlSecAppXmlDataPtr data;
@@ -2497,12 +2559,12 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
     xmlChar* nodeName;
     xmlChar* nsHref;
     xmlChar* buf;
-        
+
     if(filename == NULL) {
         fprintf(stderr, "Error: xml filename is null\n");
         return(NULL);
     }
-    
+
     /* create object */
     data = (xmlSecAppXmlDataPtr) xmlMalloc(sizeof(xmlSecAppXmlData));
     if(data == NULL) {
@@ -2510,37 +2572,37 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
         return(NULL);
     }
     memset(data, 0, sizeof(xmlSecAppXmlData));
-    
+
     /* parse doc */
     data->doc = xmlSecParseFile(filename);
     if(data->doc == NULL) {
-        fprintf(stderr, "Error: failed to parse xml file \"%s\"\n", 
+        fprintf(stderr, "Error: failed to parse xml file \"%s\"\n",
                 filename);
         xmlSecAppXmlDataDestroy(data);
-        return(NULL);    
+        return(NULL);
     }
-    
+
     /* load dtd and set default attrs and ids */
     if(xmlSecAppCmdLineParamGetString(&dtdFileParam) != NULL) {
         xmlValidCtxt ctx;
 
         data->dtd = xmlParseDTD(NULL, BAD_CAST xmlSecAppCmdLineParamGetString(&dtdFileParam));
         if(data->dtd == NULL) {
-            fprintf(stderr, "Error: failed to parse dtd file \"%s\"\n", 
+            fprintf(stderr, "Error: failed to parse dtd file \"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&dtdFileParam));
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
 
-        memset(&ctx, 0, sizeof(ctx));    
+        memset(&ctx, 0, sizeof(ctx));
         /* we don't care is doc actually valid or not */
         xmlValidateDtd(&ctx, data->doc, data->dtd);
     }
-    
+
     /* set ID attributes from command line */
     for(value = idAttrParam.value; value != NULL; value = value->next) {
         if(value->strValue == NULL) {
-            fprintf(stderr, "Error: invalid value for option \"%s\".\n", 
+            fprintf(stderr, "Error: invalid value for option \"%s\".\n",
                     idAttrParam.fullName);
             xmlSecAppXmlDataDestroy(data);
             return(NULL);
@@ -2569,7 +2631,7 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
                 fprintf(stderr, "Error: failed to add ID attribute \"%s\" for node \"%s\"\n", attrName, value->strValue);
                 xmlFree(buf);
                 xmlSecAppXmlDataDestroy(data);
-                return(NULL);    
+                return(NULL);
             }
             cur = xmlSecGetNextElementNode(cur->next);
         }
@@ -2581,25 +2643,25 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
     /* now find the start node */
     if(xmlSecAppCmdLineParamGetString(&nodeIdParam) != NULL) {
         xmlAttrPtr attr;
-            
+
         attr = xmlGetID(data->doc, BAD_CAST xmlSecAppCmdLineParamGetString(&nodeIdParam));
         if(attr == NULL) {
-            fprintf(stderr, "Error: failed to find node with id=\"%s\"\n", 
+            fprintf(stderr, "Error: failed to find node with id=\"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&nodeIdParam));
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
         cur = attr->parent;
     } else if(xmlSecAppCmdLineParamGetString(&nodeNameParam) != NULL) {
         xmlChar* name;
         xmlChar* ns;
-        
+
         buf = xmlStrdup(BAD_CAST xmlSecAppCmdLineParamGetString(&nodeNameParam));
         if(buf == NULL) {
-            fprintf(stderr, "Error: failed to duplicate node \"%s\"\n", 
+            fprintf(stderr, "Error: failed to duplicate node \"%s\"\n",
                     xmlSecAppCmdLineParamGetString(&nodeNameParam));
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
         name = (xmlChar*)strrchr((char*)buf, ':');
         if(name != NULL) {
@@ -2609,14 +2671,14 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
             name = buf;
             ns = NULL;
         }
-        
+
         cur = xmlSecFindNode(xmlDocGetRootElement(data->doc), name, ns);
         if(cur == NULL) {
-            fprintf(stderr, "Error: failed to find node with name=\"%s\"\n", 
+            fprintf(stderr, "Error: failed to find node with name=\"%s\"\n",
                     name);
             xmlFree(buf);
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
         xmlFree(buf);
     } else if(xmlSecAppCmdLineParamGetString(&nodeXPathParam) != NULL) {
@@ -2628,18 +2690,18 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
 
         rootNode = xmlDocGetRootElement(data->doc);
         if(rootNode == NULL) {
-            fprintf(stderr, "Error: failed to find root node\n"); 
+            fprintf(stderr, "Error: failed to find root node\n");
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
-        
+
         ctx = xmlXPathNewContext(data->doc);
         if(ctx == NULL) {
             fprintf(stderr, "Error: failed to create xpath context\n");
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
-        
+
         /* register namespaces from the root node */
         for(ns = rootNode->nsDef; ns != NULL; ns = ns->next) {
             if(ns->prefix != NULL){
@@ -2648,17 +2710,17 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
                     fprintf(stderr, "Error: failed to register namespace \"%s\"\n", ns->prefix);
                     xmlXPathFreeContext(ctx);
                     xmlSecAppXmlDataDestroy(data);
-                    return(NULL);    
+                    return(NULL);
                 }
             }
         }
-        
+
         obj = xmlXPathEval(BAD_CAST xmlSecAppCmdLineParamGetString(&nodeXPathParam), ctx);
         if(obj == NULL) {
             fprintf(stderr, "Error: failed to evaluate xpath expression\n");
             xmlXPathFreeContext(ctx);
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
 
         if((obj->nodesetval == NULL) || (obj->nodesetval->nodeNr != 1)) {
@@ -2666,38 +2728,38 @@ xmlSecAppXmlDataCreate(const char* filename, const xmlChar* defStartNodeName, co
             xmlXPathFreeObject(obj);
             xmlXPathFreeContext(ctx);
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
-                
+
         cur = obj->nodesetval->nodeTab[0];
         xmlXPathFreeContext(ctx);
         xmlXPathFreeObject(obj);
-        
+
     } else {
         cur = xmlDocGetRootElement(data->doc);
         if(cur == NULL) {
-            fprintf(stderr, "Error: failed to get root element\n"); 
+            fprintf(stderr, "Error: failed to get root element\n");
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
     }
-    
+
     if(defStartNodeName != NULL) {
         data->startNode = xmlSecFindNode(cur, defStartNodeName, defStartNodeNs);
         if(data->startNode == NULL) {
-            fprintf(stderr, "Error: failed to find default node with name=\"%s\"\n", 
+            fprintf(stderr, "Error: failed to find default node with name=\"%s\"\n",
                     defStartNodeName);
             xmlSecAppXmlDataDestroy(data);
-            return(NULL);    
+            return(NULL);
         }
     } else {
         data->startNode = cur;
     }
-    
+
     return(data);
 }
 
-static void 
+static void
 xmlSecAppXmlDataDestroy(xmlSecAppXmlDataPtr data) {
     if(data == NULL) {
         fprintf(stderr, "Error: xml data is null\n");
@@ -2710,10 +2772,10 @@ xmlSecAppXmlDataDestroy(xmlSecAppXmlDataPtr data) {
         xmlFreeDoc(data->doc);
     }
     memset(data, 0, sizeof(xmlSecAppXmlData));
-    xmlFree(data);    
+    xmlFree(data);
 }
 
-static xmlSecAppCommand 
+static xmlSecAppCommand
 xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics, xmlSecAppCommand* subCommand) {
     if(subCommand != NULL) {
         (*subCommand) = xmlSecAppCommandUnknown;
@@ -2721,19 +2783,19 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
 
     if((cmd == NULL) || (cmdLineTopics == NULL)) {
         return(xmlSecAppCommandUnknown);
-    } else 
+    } else
 
     if((strcmp(cmd, "help") == 0) || (strcmp(cmd, "--help") == 0)) {
         (*cmdLineTopics) = 0;
         return(xmlSecAppCommandHelp);
-    } else 
+    } else
 
     if((strcmp(cmd, "help-all") == 0) || (strcmp(cmd, "--help-all") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicAll;
         return(xmlSecAppCommandHelp);
-    } else 
-    
-    if((strncmp(cmd, "help-", 5) == 0) || (strncmp(cmd, "--help-", 7) == 0)) {   
+    } else
+
+    if((strncmp(cmd, "help-", 5) == 0) || (strncmp(cmd, "--help-", 7) == 0)) {
         cmd = (cmd[0] == '-') ? cmd + 7 : cmd + 5;
         if(subCommand) {
             (*subCommand) = xmlSecAppParseCommand(cmd, cmdLineTopics, NULL);
@@ -2741,45 +2803,45 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
             (*cmdLineTopics) = 0;
         }
         return(xmlSecAppCommandHelp);
-    } else 
+    } else
 
     if((strcmp(cmd, "version") == 0) || (strcmp(cmd, "--version") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicVersion;
         return(xmlSecAppCommandVersion);
-    } else 
+    } else
 
     if((strcmp(cmd, "list-key-data") == 0) || (strcmp(cmd, "--list-key-data") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicCryptoConfig;
         return(xmlSecAppCommandListKeyData);
-    } else 
+    } else
 
     if((strcmp(cmd, "check-key-data") == 0) || (strcmp(cmd, "--check-key-data") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicCryptoConfig;
         return(xmlSecAppCommandCheckKeyData);
-    } else 
+    } else
 
     if((strcmp(cmd, "list-transforms") == 0) || (strcmp(cmd, "--list-transforms") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicCryptoConfig;
         return(xmlSecAppCommandListTransforms);
-    } else 
+    } else
 
     if((strcmp(cmd, "check-transforms") == 0) || (strcmp(cmd, "--check-transforms") == 0)) {
         (*cmdLineTopics) = xmlSecAppCmdLineTopicCryptoConfig;
         return(xmlSecAppCommandCheckTransforms);
-    } else 
-    
+    } else
+
     if((strcmp(cmd, "keys") == 0) || (strcmp(cmd, "--keys") == 0)) {
-        (*cmdLineTopics) = 
-                        xmlSecAppCmdLineTopicGeneral | 
+        (*cmdLineTopics) =
+                        xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandKeys);
-    } else 
-    
+    } else
+
 #ifndef XMLSEC_NO_XMLDSIG
     if((strcmp(cmd, "sign") == 0) || (strcmp(cmd, "--sign") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicDSigCommon |
@@ -2787,10 +2849,10 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandSign);
-    } else 
-    
+    } else
+
     if((strcmp(cmd, "verify") == 0) || (strcmp(cmd, "--verify") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicDSigCommon |
@@ -2798,10 +2860,10 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandVerify);
-    } else 
+    } else
 #ifndef XMLSEC_NO_TMPL_TEST
     if((strcmp(cmd, "sign-tmpl") == 0) || (strcmp(cmd, "--sign-tmpl") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicDSigCommon |
@@ -2809,14 +2871,14 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandSignTmpl);
-    } else 
+    } else
 #endif /* XMLSEC_NO_TMPL_TEST */
-    
+
 #endif /* XMLSEC_NO_XMLDSIG */
 
 #ifndef XMLSEC_NO_XMLENC
     if((strcmp(cmd, "encrypt") == 0) || (strcmp(cmd, "--encrypt") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicEncCommon |
@@ -2824,10 +2886,10 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandEncrypt);
-    } else 
+    } else
 
     if((strcmp(cmd, "decrypt") == 0) || (strcmp(cmd, "--decrypt") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicEncCommon |
@@ -2835,11 +2897,11 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandDecrypt);
-    } else 
+    } else
 
 #ifndef XMLSEC_NO_TMPL_TEST
     if((strcmp(cmd, "encrypt-tmpl") == 0) || (strcmp(cmd, "--encrypt-tmpl") == 0)) {
-        (*cmdLineTopics) = 
+        (*cmdLineTopics) =
                         xmlSecAppCmdLineTopicGeneral |
                         xmlSecAppCmdLineTopicCryptoConfig |
                         xmlSecAppCmdLineTopicEncCommon |
@@ -2847,7 +2909,7 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
                         xmlSecAppCmdLineTopicKeysMngr |
                         xmlSecAppCmdLineTopicX509Certs;
         return(xmlSecAppCommandEncryptTmpl);
-    } else 
+    } else
 #endif /* XMLSEC_NO_TMPL_TEST */
 #endif /* XMLSEC_NO_XMLENC */
 
@@ -2856,13 +2918,13 @@ xmlSecAppParseCommand(const char* cmd, xmlSecAppCmdLineParamTopic* cmdLineTopics
         return(xmlSecAppCommandUnknown);
     }
 }
-        
-static void 
+
+static void
 xmlSecAppPrintHelp(xmlSecAppCommand command, xmlSecAppCmdLineParamTopic topics) {
     switch(command) {
     case xmlSecAppCommandUnknown:
-	fprintf(stderr, "Unknown command\n");
-	fprintf(stdout, "%s%s\n", helpCommands1, helpCommands2);
+    fprintf(stderr, "Unknown command\n");
+    fprintf(stdout, "%s%s\n", helpCommands1, helpCommands2);
         break;
     case xmlSecAppCommandHelp:
         fprintf(stdout, "%s%s\n", helpCommands1, helpCommands2);
@@ -2913,10 +2975,10 @@ xmlSecAppPrintHelp(xmlSecAppCommand command, xmlSecAppCmdLineParamTopic topics) 
     fprintf(stdout, "%s\n", copyright);
 }
 
-static xmlSecTransformUriType 
+static xmlSecTransformUriType
 xmlSecAppGetUriType(const char* string) {
     xmlSecTransformUriType type = xmlSecTransformUriTypeNone;
-    
+
     while((string != NULL) && (string[0] != '\0')) {
         if(strcmp(string, "empty") == 0) {
             type |= xmlSecTransformUriTypeEmpty;
@@ -2935,36 +2997,36 @@ xmlSecAppGetUriType(const char* string) {
     return(type);
 }
 
-static FILE* 
+static FILE*
 xmlSecAppOpenFile(const char* filename) {
     FILE* file = NULL;
-    
+
     if((filename == NULL) || (strcmp(filename, XMLSEC_STDOUT_FILENAME) == 0)) {
         return(stdout);
     }
-#ifdef WIN32
+#if defined(_MSC_VER)
     fopen_s(&file, filename, "wb");
-#else /* WIN32 */
+#else /* defined(_MSC_VER) */
     file = fopen(filename, "wb");
-#endif /* WIN32 */
+#endif /* defined(_MSC_VER) */
     if(file == NULL) {
         fprintf(stderr, "Error: failed to open file \"%s\"\n", filename);
         return(NULL);
     }
-    
+
     return(file);
 }
 
-static void 
+static void
 xmlSecAppCloseFile(FILE* file) {
     if((file == NULL) || (file == stdout) || (file == stderr)) {
         return;
     }
-    
+
     fclose(file);
 }
 
-static int 
+static int
 xmlSecAppWriteResult(xmlDocPtr doc, xmlSecBufferPtr buffer) {
     FILE* f;
 
@@ -2973,28 +3035,28 @@ xmlSecAppWriteResult(xmlDocPtr doc, xmlSecBufferPtr buffer) {
         return(-1);
     }
     if(doc != NULL) {
-        xmlDocDump(f, doc);    
+        xmlDocDump(f, doc);
     } else if((buffer != NULL) && (xmlSecBufferGetData(buffer) != NULL)) {
-        (void)fwrite(xmlSecBufferGetData(buffer), xmlSecBufferGetSize(buffer), 1, f); 
+        (void)fwrite(xmlSecBufferGetData(buffer), xmlSecBufferGetSize(buffer), 1, f);
     } else {
-        fprintf(stderr, "Error: both result doc and result buffer are null\n"); 
+        fprintf(stderr, "Error: both result doc and result buffer are null\n");
         xmlSecAppCloseFile(f);
         return(-1);
-    }    
+    }
     xmlSecAppCloseFile(f);
     return(0);
 }
 
-static int  
+static int
 xmlSecAppAddIDAttr(xmlNodePtr node, const xmlChar* attrName, const xmlChar* nodeName, const xmlChar* nsHref) {
     xmlAttrPtr attr, tmpAttr;
     xmlNodePtr cur;
     xmlChar* id;
-    
+
     if((node == NULL) || (attrName == NULL) || (nodeName == NULL)) {
         return(-1);
     }
-    
+
     /* process children first because it does not matter much but does simplify code */
     cur = xmlSecGetNextElementNode(node->children);
     while(cur != NULL) {
@@ -3003,17 +3065,17 @@ xmlSecAppAddIDAttr(xmlNodePtr node, const xmlChar* attrName, const xmlChar* node
         }
         cur = xmlSecGetNextElementNode(cur->next);
     }
-    
+
     /* node name must match */
     if(!xmlStrEqual(node->name, nodeName)) {
         return(0);
     }
-        
-    /* if nsHref is set then it also should match */    
+
+    /* if nsHref is set then it also should match */
     if((nsHref != NULL) && (node->ns != NULL) && (!xmlStrEqual(nsHref, node->ns->href))) {
         return(0);
     }
-    
+
     /* the attribute with name equal to attrName should exist */
     for(attr = node->properties; attr != NULL; attr = attr->next) {
         if(xmlStrEqual(attr->name, attrName)) {
@@ -3023,19 +3085,19 @@ xmlSecAppAddIDAttr(xmlNodePtr node, const xmlChar* attrName, const xmlChar* node
     if(attr == NULL) {
         return(0);
     }
-    
+
     /* and this attr should have a value */
     id = xmlNodeListGetString(node->doc, attr->children, 1);
     if(id == NULL) {
         return(0);
     }
-    
+
     /* check that we don't have same ID already */
     tmpAttr = xmlGetID(node->doc, id);
     if(tmpAttr == NULL) {
         xmlAddID(NULL, node->doc, id, attr);
     } else if(tmpAttr != attr) {
-        fprintf(stderr, "Error: duplicate ID attribute \"%s\"\n", id);  
+        fprintf(stderr, "Error: duplicate ID attribute \"%s\"\n", id);
         xmlFree(id);
         return(-1);
     }

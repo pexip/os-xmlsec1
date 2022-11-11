@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_TRANSFORMS_H__
 #define __XMLSEC_TRANSFORMS_H__
@@ -14,6 +14,7 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/buffer.h>
 #include <xmlsec/list.h>
@@ -997,6 +998,19 @@ XMLSEC_EXPORT xmlSecTransformId xmlSecTransformRemoveXmlTagsC14NGetKlass(void);
 XMLSEC_EXPORT xmlSecTransformId xmlSecTransformVisa3DHackGetKlass       (void);
 XMLSEC_EXPORT int               xmlSecTransformVisa3DHackSetID          (xmlSecTransformPtr transform,
                                                                          const xmlChar* id);
+
+
+
+/*********************************************************************
+ *
+ * Helper transform functions
+ *
+ ********************************************************************/
+
+#ifndef XMLSEC_NO_HMAC
+XMLSEC_EXPORT xmlSecSize        xmlSecTransformHmacGetMinOutputBitsSize(void);
+XMLSEC_EXPORT void              xmlSecTransformHmacSetMinOutputBitsSize(xmlSecSize val);
+#endif /* XMLSEC_NO_HMAC */
 
 #ifdef __cplusplus
 }

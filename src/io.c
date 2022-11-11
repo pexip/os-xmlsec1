@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:io
@@ -39,6 +39,7 @@
 #include <xmlsec/io.h>
 #include <xmlsec/errors.h>
 
+#include "cast_helpers.h"
 
 /*******************************************************************
  *
@@ -286,14 +287,11 @@ xmlSecIORegisterDefaultCallbacks(void) {
     return(0);
 }
 
-
-
-
 /**************************************************************
  *
  * Input URI Transform
  *
- * xmlSecInputURICtx is located after xmlSecTransform
+ * xmlSecTransform + xmlSecInputURICtx
  *
  **************************************************************/
 typedef struct _xmlSecInputURICtx                               xmlSecInputURICtx,
@@ -302,12 +300,9 @@ struct _xmlSecInputURICtx {
     xmlSecIOCallbackPtr         clbks;
     void*                       clbksCtx;
 };
-#define xmlSecTransformInputUriSize \
-        (sizeof(xmlSecTransform) + sizeof(xmlSecInputURICtx))
-#define xmlSecTransformInputUriGetCtx(transform) \
-    ((xmlSecTransformCheckSize((transform), xmlSecTransformInputUriSize)) ? \
-        (xmlSecInputURICtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)) : \
-        (xmlSecInputURICtxPtr)NULL)
+
+XMLSEC_TRANSFORM_DECLARE(InputUri, xmlSecInputURICtx)
+#define xmlSecInputUriSize XMLSEC_TRANSFORM_SIZE(InputUri)
 
 static int              xmlSecTransformInputURIInitialize       (xmlSecTransformPtr transform);
 static void             xmlSecTransformInputURIFinalize         (xmlSecTransformPtr transform);
@@ -320,7 +315,7 @@ static int              xmlSecTransformInputURIPopBin           (xmlSecTransform
 static xmlSecTransformKlass xmlSecTransformInputURIKlass = {
     /* klass/object sizes */
     sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecTransformInputUriSize,                /* xmlSecSize objSize */
+    xmlSecInputUriSize,                         /* xmlSecSize objSize */
 
     BAD_CAST "input-uri",                       /* const xmlChar* name; */
     NULL,                                       /* const xmlChar* href; */
@@ -372,7 +367,7 @@ xmlSecTransformInputURIOpen(xmlSecTransformPtr transform, const xmlChar *uri) {
     xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecTransformInputURIId), -1);
     xmlSecAssert2(uri != NULL, -1);
 
-    ctx = xmlSecTransformInputUriGetCtx(transform);
+    ctx = xmlSecInputUriGetCtx(transform);
     xmlSecAssert2(ctx != NULL, -1);
     xmlSecAssert2(ctx->clbks == NULL, -1);
     xmlSecAssert2(ctx->clbksCtx == NULL, -1);
@@ -430,14 +425,14 @@ xmlSecTransformInputURIClose(xmlSecTransformPtr transform) {
 
     xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecTransformInputURIId), -1);
 
-    ctx = xmlSecTransformInputUriGetCtx(transform);
+    ctx = xmlSecInputUriGetCtx(transform);
     xmlSecAssert2(ctx != NULL, -1);
 
     /* close if still open and mark as closed */
     if((ctx->clbksCtx != NULL) && (ctx->clbks != NULL) && (ctx->clbks->closecallback != NULL)) {
-    	(ctx->clbks->closecallback)(ctx->clbksCtx);
-    	ctx->clbksCtx = NULL;
-    	ctx->clbks = NULL;
+        (ctx->clbks->closecallback)(ctx->clbksCtx);
+        ctx->clbksCtx = NULL;
+        ctx->clbks = NULL;
     }
 
     /* done */
@@ -450,7 +445,7 @@ xmlSecTransformInputURIInitialize(xmlSecTransformPtr transform) {
 
     xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecTransformInputURIId), -1);
 
-    ctx = xmlSecTransformInputUriGetCtx(transform);
+    ctx = xmlSecInputUriGetCtx(transform);
     xmlSecAssert2(ctx != NULL, -1);
 
     memset(ctx, 0, sizeof(xmlSecInputURICtx));
@@ -459,12 +454,12 @@ xmlSecTransformInputURIInitialize(xmlSecTransformPtr transform) {
 
 static void
 xmlSecTransformInputURIFinalize(xmlSecTransformPtr transform) {
-	xmlSecInputURICtxPtr ctx;
-	int ret;
+    xmlSecInputURICtxPtr ctx;
+    int ret;
 
     xmlSecAssert(xmlSecTransformCheckId(transform, xmlSecTransformInputURIId));
 
-    ctx = xmlSecTransformInputUriGetCtx(transform);
+    ctx = xmlSecInputUriGetCtx(transform);
     xmlSecAssert(ctx != NULL);
 
     ret = xmlSecTransformInputURIClose(transform);
@@ -472,9 +467,9 @@ xmlSecTransformInputURIFinalize(xmlSecTransformPtr transform) {
         xmlSecInternalError2("xmlSecTransformInputURIClose",
                              xmlSecTransformGetName(transform),
                              "ret=%d", ret);
-		/* ignore the error */
-		/* return; */
-	}
+        /* ignore the error */
+        /* return; */
+    }
 
     memset(ctx, 0, sizeof(xmlSecInputURICtx));
     return;
@@ -485,7 +480,7 @@ xmlSecTransformInputURIPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
                               xmlSecSize maxDataSize, xmlSecSize* dataSize,
                               xmlSecTransformCtxPtr transformCtx) {
     xmlSecInputURICtxPtr ctx;
-
+    int maxDataLen;
     int ret;
 
     xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecTransformInputURIId), -1);
@@ -493,16 +488,17 @@ xmlSecTransformInputURIPopBin(xmlSecTransformPtr transform, xmlSecByte* data,
     xmlSecAssert2(dataSize != NULL, -1);
     xmlSecAssert2(transformCtx != NULL, -1);
 
-    ctx = xmlSecTransformInputUriGetCtx(transform);
+    ctx = xmlSecInputUriGetCtx(transform);
     xmlSecAssert2(ctx != NULL, -1);
 
     if((ctx->clbksCtx != NULL) && (ctx->clbks != NULL) && (ctx->clbks->readcallback != NULL)) {
-        ret = (ctx->clbks->readcallback)(ctx->clbksCtx, (char*)data, (int)maxDataSize);
+        XMLSEC_SAFE_CAST_SIZE_TO_INT(maxDataSize, maxDataLen, return(-1), xmlSecTransformGetName(transform));
+        ret = (ctx->clbks->readcallback)(ctx->clbksCtx, (char*)data, maxDataLen);
         if(ret < 0) {
             xmlSecInternalError("ctx->clbks->readcallback", xmlSecTransformGetName(transform));
             return(-1);
         }
-        (*dataSize) = ret;
+        XMLSEC_SAFE_CAST_INT_TO_SIZE(ret, (*dataSize), return(-1), NULL);
     } else {
         (*dataSize) = 0;
     }

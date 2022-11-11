@@ -28,12 +28,14 @@
 #include <xmlsec/transforms.h>
 #include <xmlsec/errors.h>
 #include <xmlsec/dl.h>
-#include <xmlsec/xmltree.h>
 #include <xmlsec/private.h>
+#include <xmlsec/xmltree.h>
 
 #include <xmlsec/mscng/app.h>
 #include <xmlsec/mscng/crypto.h>
 #include <xmlsec/mscng/x509.h>
+
+#include "../cast_helpers.h"
 
 static xmlSecCryptoDLFunctionsPtr gXmlSecMSCngFunctions = NULL;
 
@@ -350,6 +352,7 @@ xmlSecMSCngShutdown(void) {
 int
 xmlSecMSCngGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
     NTSTATUS status;
+    DWORD dwSize;
     int ret;
 
     xmlSecAssert2(buffer != NULL, -1);
@@ -357,14 +360,15 @@ xmlSecMSCngGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
 
     ret = xmlSecBufferSetSize(buffer, size);
     if(ret < 0) {
-    xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=%d", size);
+    xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 
+    XMLSEC_SAFE_CAST_SIZE_TO_ULONG(size, dwSize, return(-1), NULL);
     status = BCryptGenRandom(
         NULL,
         (PBYTE)xmlSecBufferGetData(buffer),
-        (ULONG)size,
+        dwSize,
         BCRYPT_USE_SYSTEM_PREFERRED_RNG);
     if(status != STATUS_SUCCESS) {
         xmlSecMSCngNtError("BCryptGenRandom", NULL, status);

@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:crypto
@@ -33,11 +33,27 @@
 #include <xmlsec/openssl/crypto.h>
 #include <xmlsec/openssl/x509.h>
 
+#include "openssl_compat.h"
+#include "../cast_helpers.h"
+
 static int              xmlSecOpenSSLErrorsInit                 (void);
 static void             xmlSecOpenSSLErrorsShutdown             (void);
 
 static xmlSecCryptoDLFunctionsPtr gXmlSecOpenSSLFunctions = NULL;
 static xmlChar* gXmlSecOpenSSLTrustedCertsFolder = NULL;
+
+#if !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR)
+
+#define XMLSEC_OPENSSL_ERRORS_FUNCTION                  0
+
+static int gXmlSecOpenSSLErrorsLib = 0;
+static char gXmlSecOpenSSLErrorsLibName[] = "xmlsec lib";
+static char gXmlSecOpenSSLErrorsDefault[] = "xmlsec routines";
+
+static ERR_STRING_DATA xmlSecOpenSSLStrLib[2];
+static ERR_STRING_DATA xmlSecOpenSSLStrDefReason[2];
+static ERR_STRING_DATA xmlSecOpenSSLStrReasons[XMLSEC_ERRORS_MAX_NUMBER + 1];
+#endif /* !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR) */
 
 /**
  * xmlSecCryptoGetFunctions_openssl:
@@ -358,7 +374,7 @@ xmlSecOpenSSLInit (void)  {
 int
 xmlSecOpenSSLShutdown(void) {
     xmlSecOpenSSLSetDefaultTrustedCertsFolder(NULL);
-	xmlSecOpenSSLErrorsShutdown();
+    xmlSecOpenSSLErrorsShutdown();
     return(0);
 }
 
@@ -416,15 +432,17 @@ xmlSecOpenSSLGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
 
     ret = xmlSecBufferSetSize(buffer, size);
     if(ret < 0) {
-        xmlSecInternalError2("xmlSecBufferSetSize", NULL, "size=%d", size);
+        xmlSecInternalError2("xmlSecBufferSetSize", NULL,
+                             "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
 
     /* get random data */
-    ret = RAND_bytes((xmlSecByte*)xmlSecBufferGetData(buffer), size);
+    ret = RAND_priv_bytes_ex(xmlSecOpenSSLGetLibCtx(), (xmlSecByte*)xmlSecBufferGetData(buffer), size,
+                        XMLSEEC_OPENSSL_RAND_BYTES_STRENGTH);
     if(ret != 1) {
-        xmlSecOpenSSLError2("RAND_bytes", NULL,
-                            "size=%lu", (unsigned long)size);
+        xmlSecOpenSSLError2("RAND_priv_bytes_ex", NULL,
+                            "size=" XMLSEC_SIZE_FMT, size);
         return(-1);
     }
     return(0);
@@ -446,43 +464,47 @@ void
 xmlSecOpenSSLErrorsDefaultCallback(const char* file, int line, const char* func,
                                 const char* errorObject, const char* errorSubject,
                                 int reason, const char* msg) {
-    ERR_put_error(XMLSEC_OPENSSL_ERRORS_LIB,
+#if !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR)
+    ERR_put_error(gXmlSecOpenSSLErrorsLib,
                 XMLSEC_OPENSSL_ERRORS_FUNCTION,
                 reason, file, line);
+#endif /* !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR) */
+
     xmlSecErrorsDefaultCallback(file, line, func,
                 errorObject, errorSubject,
                 reason, msg);
 }
 
-#ifndef OPENSSL_IS_BORINGSSL
-static ERR_STRING_DATA xmlSecOpenSSLStrReasons[XMLSEC_ERRORS_MAX_NUMBER + 1];
-static ERR_STRING_DATA xmlSecOpenSSLStrLib[] = {
-    { ERR_PACK(XMLSEC_OPENSSL_ERRORS_LIB,0,0),      "xmlsec routines"},
-    { 0,                                            NULL}
-};
-static ERR_STRING_DATA xmlSecOpenSSLStrDefReason[]= {
-    { XMLSEC_OPENSSL_ERRORS_LIB,                    "xmlsec lib"},
-    { 0,                                            NULL}
-};
-#endif /* OPENSSL_IS_BORINGSSL */
-
 static int
 xmlSecOpenSSLErrorsInit(void) {
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR)
     xmlSecSize pos;
+
+    /* get XMLSec library id */
+    gXmlSecOpenSSLErrorsLib = ERR_get_next_error_library();
+
+    /* initialize xmlsec lib name array */
+    memset(xmlSecOpenSSLStrLib, 0, sizeof(xmlSecOpenSSLStrLib));
+    xmlSecOpenSSLStrLib[0].error = ERR_PACK(gXmlSecOpenSSLErrorsLib, 0, 0);
+    xmlSecOpenSSLStrLib[0].string = gXmlSecOpenSSLErrorsLibName;
+
+    /* initialize xmlsec default error array */
+    memset(xmlSecOpenSSLStrDefReason, 0, sizeof(xmlSecOpenSSLStrDefReason));
+    xmlSecOpenSSLStrDefReason[0].error = ERR_PACK(gXmlSecOpenSSLErrorsLib, XMLSEC_OPENSSL_ERRORS_FUNCTION, 0);
+    xmlSecOpenSSLStrDefReason[0].string = gXmlSecOpenSSLErrorsDefault;
 
     /* initialize reasons array */
     memset(xmlSecOpenSSLStrReasons, 0, sizeof(xmlSecOpenSSLStrReasons));
     for(pos = 0; (pos < XMLSEC_ERRORS_MAX_NUMBER) && (xmlSecErrorsGetMsg(pos) != NULL); ++pos) {
-        xmlSecOpenSSLStrReasons[pos].error  = xmlSecErrorsGetCode(pos);
+        xmlSecOpenSSLStrReasons[pos].error  = ERR_PACK(gXmlSecOpenSSLErrorsLib, XMLSEC_OPENSSL_ERRORS_FUNCTION, xmlSecErrorsGetCode(pos));
         xmlSecOpenSSLStrReasons[pos].string = xmlSecErrorsGetMsg(pos);
     }
 
     /* load xmlsec strings in OpenSSL */
-    ERR_load_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrLib); /* define xmlsec lib name */
-    ERR_load_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrDefReason); /* define default reason */
-    ERR_load_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrReasons);
-#endif /* OPENSSL_IS_BORINGSSL */
+    ERR_load_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrLib); /* define xmlsec lib name */
+    ERR_load_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrDefReason); /* define default reason */
+    ERR_load_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrReasons);
+#endif /* !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR) */
 
     /* and set default errors callback for xmlsec to us */
     xmlSecErrorsSetCallback(xmlSecOpenSSLErrorsDefaultCallback);
@@ -496,12 +518,12 @@ xmlSecOpenSSLErrorsShutdown(void) {
     /* remove callback */
     xmlSecErrorsSetCallback(NULL);
 
-#ifndef OPENSSL_IS_BORINGSSL
+#if !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR)
     /* unload xmlsec strings from OpenSSL */
-    ERR_unload_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrLib);
-    ERR_unload_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrDefReason);
-    ERR_unload_strings(XMLSEC_OPENSSL_ERRORS_LIB, xmlSecOpenSSLStrReasons);
-#endif /* OPENSSL_IS_BORINGSSL */
+    ERR_unload_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrLib);
+    ERR_unload_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrDefReason);
+    ERR_unload_strings(gXmlSecOpenSSLErrorsLib, xmlSecOpenSSLStrReasons);
+#endif /* !defined(XMLSEC_OPENSSL_API_300) && !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ERR) */
 }
 
 /**
@@ -541,3 +563,117 @@ const xmlChar*
 xmlSecOpenSSLGetDefaultTrustedCertsFolder(void) {
     return(gXmlSecOpenSSLTrustedCertsFolder);
 }
+
+#ifdef XMLSEC_OPENSSL_API_300
+
+static OSSL_LIB_CTX* gXmlSecOpenSSLLibCtx = NULL;
+
+/**
+ * xmlSecOpenSSLSetLibCtx:
+ * @libctx:           the OSSL_LIB_CTX object to be used by xmlsec-openssl
+ *                    or NULL to use default.
+ *
+ * Sets the OSSL_LIB_CTX object to be used by xmlsec-openssl. The caller is
+ * responsible for lifetime of this object.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecOpenSSLSetLibCtx(OSSL_LIB_CTX* libctx) {
+    gXmlSecOpenSSLLibCtx = libctx;
+    return(0);
+}
+
+/**
+ * xmlSecOpenSSLGetLibCtx:
+ *
+ * Gets the current OSSL_LIB_CTX object to be used by xmlsec-openssl or
+ * NULL if the default one is used.
+ *
+ * Returns: the current OSSL_LIB_CTX object or NULL if default is used.
+ */
+OSSL_LIB_CTX*
+xmlSecOpenSSLGetLibCtx(void) {
+    return(gXmlSecOpenSSLLibCtx);
+}
+#endif /* XMLSEC_OPENSSL_API_300 */
+
+/********************************************************************
+ *
+ * BIO helpers
+ *
+ ********************************************************************/
+
+/**
+ * xmlSecOpenSSLCreateMemBio:
+ *
+ * Creates a memory BIO using xmlSecOpenSSLGetLibCtx() for OpenSSL 3.0.
+ *
+ * Returns: the pointer to BIO object or NULL if an error occurs/
+ */
+BIO*
+xmlSecOpenSSLCreateMemBio(void) {
+    BIO* bio = NULL;
+
+    bio = BIO_new_ex(xmlSecOpenSSLGetLibCtx(), BIO_s_mem());
+    if(bio == NULL) {
+        xmlSecOpenSSLError("BIO_new_ex(BIO_s_mem())", NULL);
+        return(NULL);
+    }
+    return(bio);
+}
+
+/**
+ * xmlSecOpenSSLCreateMemBufBio:
+ * @buf:      the data
+ * @bufSize:  the data size
+ *
+ * Creates a read-only memory BIO using xmlSecOpenSSLGetLibCtx() for
+ * OpenSSL 3.0 containing @len bytes of data from @buf.
+ *
+ * Returns: the pointer to BIO object or NULL if an error occurs/
+ */
+BIO*
+xmlSecOpenSSLCreateMemBufBio(const xmlSecByte *buf, xmlSecSize bufSize) {
+    BIO* bio = NULL;
+    int bufLen;
+
+    xmlSecAssert2(buf != NULL, NULL);
+
+    XMLSEC_SAFE_CAST_SIZE_TO_INT(bufSize, bufLen, return(NULL), NULL);
+    bio = BIO_new_mem_buf((const void*)buf, bufLen);
+    if(bio == NULL) {
+        xmlSecOpenSSLError2("BIO_new_mem_buf", NULL,
+                            "dataSize=%d", bufLen);
+        return(NULL);
+    }
+    return(bio);
+}
+
+/**
+ * xmlSecOpenSSLCreateReadFileBio:
+ * @path:     the file path
+ *
+ * Creates a read-only file BIO using xmlSecOpenSSLGetLibCtx() for
+ * OpenSSL 3.0.
+ *
+ * Returns: the pointer to BIO object or NULL if an error occurs/
+ */
+BIO*
+xmlSecOpenSSLCreateReadFileBio(const char* path) {
+    BIO* bio = NULL;
+    xmlSecAssert2(path != NULL, NULL);
+
+    bio = BIO_new_ex(xmlSecOpenSSLGetLibCtx(), BIO_s_file());
+    if(bio == NULL) {
+        xmlSecOpenSSLError("BIO_new_ex(BIO_s_file())", NULL);
+        return(NULL);
+    }
+    if(BIO_read_filename(bio, path) != 1) {
+        xmlSecOpenSSLError2("BIO_read_filename", NULL,
+            "path=%s", xmlSecErrorsSafeString(path));
+        return(NULL);
+    }
+    return(bio);
+}
+

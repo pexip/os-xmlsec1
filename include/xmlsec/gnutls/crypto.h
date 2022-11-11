@@ -4,11 +4,12 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_GNUTLS_CRYPTO_H__
 #define __XMLSEC_GNUTLS_CRYPTO_H__
 
+#include <xmlsec/exports.h>
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/transforms.h>
@@ -197,8 +198,8 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformDsaSha1GetKlass(void
  *******************************************************************/
 #ifndef XMLSEC_NO_HMAC
 
-XMLSEC_CRYPTO_EXPORT int               xmlSecGnuTLSHmacGetMinOutputLength(void);
-XMLSEC_CRYPTO_EXPORT void              xmlSecGnuTLSHmacSetMinOutputLength(int min_length);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT int  xmlSecGnuTLSHmacGetMinOutputLength(void);
+XMLSEC_DEPRECATED XMLSEC_CRYPTO_EXPORT void xmlSecGnuTLSHmacSetMinOutputLength(int min_length);
 
 /**
  * xmlSecGnuTLSKeyDataHmacId:

@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:digests
@@ -28,6 +28,8 @@
 #include <xmlsec/gcrypt/app.h>
 #include <xmlsec/gcrypt/crypto.h>
 
+#include "../cast_helpers.h"
+
 /**************************************************************************
  *
  * Internal GCRYPT Digest CTX
@@ -45,13 +47,11 @@ struct _xmlSecGCryptDigestCtx {
  *
  * Digest transforms
  *
- * xmlSecGCryptDigestCtx is located after xmlSecTransform
+ * xmlSecTransform + xmlSecGCryptDigestCtx
  *
  *****************************************************************************/
-#define xmlSecGCryptDigestSize  \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecGCryptDigestCtx))
-#define xmlSecGCryptDigestGetCtx(transform) \
-    ((xmlSecGCryptDigestCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+XMLSEC_TRANSFORM_DECLARE(GCryptDigest, xmlSecGCryptDigestCtx)
+#define xmlSecGCryptDigestSize XMLSEC_TRANSFORM_SIZE(GCryptDigest)
 
 static int      xmlSecGCryptDigestInitialize            (xmlSecTransformPtr transform);
 static void     xmlSecGCryptDigestFinalize              (xmlSecTransformPtr transform);
@@ -262,7 +262,7 @@ xmlSecGCryptDigestExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
             if(ret < 0) {
                 xmlSecInternalError2("xmlSecBufferRemoveHead",
                                      xmlSecTransformGetName(transform),
-                                     "size=%d", inSize);
+                                     "size=" XMLSEC_SIZE_FMT, inSize);
                 return(-1);
             }
         }
@@ -273,7 +273,7 @@ xmlSecGCryptDigestExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
             gcry_md_final(ctx->digestCtx);
             buf = gcry_md_read(ctx->digestCtx, ctx->digest);
             if(buf == NULL) {
-                xmlSecGCryptError("gcry_md_read", GPG_ERR_NO_ERROR,
+                xmlSecGCryptError("gcry_md_read", (gcry_error_t)GPG_ERR_NO_ERROR,
                                   xmlSecTransformGetName(transform));
                 return(-1);
             }
@@ -288,9 +288,8 @@ xmlSecGCryptDigestExecute(xmlSecTransformPtr transform, int last, xmlSecTransfor
             if(transform->operation == xmlSecTransformOperationSign) {
                 ret = xmlSecBufferAppend(out, ctx->dgst, ctx->dgstSize);
                 if(ret < 0) {
-                    xmlSecInternalError2("xmlSecBufferAppend",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", ctx->dgstSize);
+                    xmlSecInternalError2("xmlSecBufferAppend", xmlSecTransformGetName(transform),
+                        "size=" XMLSEC_SIZE_FMT, ctx->dgstSize);
                     return(-1);
                 }
             }

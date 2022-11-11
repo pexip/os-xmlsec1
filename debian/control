@@ -7,12 +7,11 @@ XSBC-Pexip-Original-Uploaders:
  John V. Belmonte <jbelmonte@debian.org>,
  Rene Engelhard <rene@debian.org>,
 Build-Depends:
- chrpath,
  debhelper (>= 11),
  help2man,
  libgcrypt20-dev,
  libgnutls28-dev,
- libnss3-dev,
+ libnss3-dev (>= 2:3.72-2),
  libssl-dev (>= 3),
  libxml2-dev (>= 2.8.0),
  libxslt1-dev (>= 1.0.20),
@@ -21,6 +20,7 @@ Build-Depends-Indep:
  gtk-doc-tools,
  man2html-base,
  xsltproc,
+Build-Conflicts: libnspr4-dev (<< 2:4.32-3)
 Standards-Version: 4.1.4
 Homepage: https://www.aleksey.com/xmlsec/
 Vcs-Browser: https://salsa.debian.org/xml-sgml-team/xmlsec1

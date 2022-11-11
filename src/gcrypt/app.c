@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:app
@@ -28,6 +28,7 @@
 #include <xmlsec/gcrypt/crypto.h>
 
 #include "asn1.h"
+#include "../cast_helpers.h"
 
 /**
  * xmlSecGCryptAppInit:
@@ -73,7 +74,7 @@ Noteworthy changes in version 1.4.3 (2008-09-18)
 
     /* NOTE configure.in defines GCRYPT_MIN_VERSION */
     if (!gcry_check_version (GCRYPT_MIN_VERSION)) {
-        xmlSecGCryptError2("gcry_check_version", GPG_ERR_NO_ERROR, NULL,
+        xmlSecGCryptError2("gcry_check_version", (gcry_error_t)GPG_ERR_NO_ERROR, NULL,
                            "min_version=%s", GCRYPT_MIN_VERSION);
         return(-1);
     }
@@ -96,7 +97,8 @@ Noteworthy changes in version 1.4.3 (2008-09-18)
     err = gcry_control(GCRYCTL_INIT_SECMEM, 32768, 0);
     if(err != GPG_ERR_NO_ERROR) {
         xmlSecGCryptError("gcry_control(GCRYCTL_INIT_SECMEM)", err, NULL);
-        return(-1);
+        /* ignore this error because of libgrcypt bug in allocating memory, 
+        see https://github.com/lsh123/xmlsec/issues/415 for more details */
     }
 
     /* It is now okay to let Libgcrypt complain when there was/is
@@ -242,7 +244,7 @@ xmlSecGCryptAppKeyLoadMemory(const xmlSecByte* data, xmlSecSize dataSize,
 #endif /* XMLSEC_NO_X509 */
     default:
         xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_FORMAT, NULL,
-                         "format=%d", (int)format);
+            "format=" XMLSEC_ENUM_FMT, XMLSEC_ENUM_CAST(format));
         return(NULL);
     }
 
@@ -386,7 +388,7 @@ xmlSecGCryptAppPkcs12LoadMemory(const xmlSecByte* data, xmlSecSize dataSize,
  * Returns: 0 on success or a negative value otherwise.
  */
 int
-xmlSecGCryptAppKeysMngrCertLoad(xmlSecKeysMngrPtr mngr, 
+xmlSecGCryptAppKeysMngrCertLoad(xmlSecKeysMngrPtr mngr,
                                 const char *filename,
                                 xmlSecKeyDataFormat format,
                                 xmlSecKeyDataType type ATTRIBUTE_UNUSED) {

@@ -26,7 +26,6 @@
 #include <ncrypt.h>
 
 #include <xmlsec/xmlsec.h>
-#include <xmlsec/xmltree.h>
 #include <xmlsec/keys.h>
 #include <xmlsec/keyinfo.h>
 #include <xmlsec/transforms.h>
@@ -34,6 +33,9 @@
 #include <xmlsec/bn.h>
 
 #include <xmlsec/mscng/crypto.h>
+
+#include "../cast_helpers.h"
+#include "../keysdata_helpers.h"
 
 #define xmlSecMSCngSymKeyDataCheckId(data) \
     (xmlSecKeyDataIsValid((data)) && \

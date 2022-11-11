@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 /**
@@ -32,6 +32,8 @@
 #include <xmlsec/nss/app.h>
 #include <xmlsec/nss/crypto.h>
 
+#include "../cast_helpers.h"
+
 #define XMLSEC_NSS_MAX_DIGEST_SIZE              64
 
 /**************************************************************************
@@ -51,13 +53,11 @@ struct _xmlSecNssDigestCtx {
  *
  * Digest transforms
  *
- * xmlSecNssDigestCtx is located after xmlSecTransform
+ * xmlSecTransform + xmlSecNssDigestCtx
  *
  *****************************************************************************/
-#define xmlSecNssDigestSize     \
-    (sizeof(xmlSecTransform) + sizeof(xmlSecNssDigestCtx))
-#define xmlSecNssDigestGetCtx(transform) \
-    ((xmlSecNssDigestCtxPtr)(((xmlSecByte*)(transform)) + sizeof(xmlSecTransform)))
+XMLSEC_TRANSFORM_DECLARE(NssDigest, xmlSecNssDigestCtx)
+#define xmlSecNssDigestSize XMLSEC_TRANSFORM_SIZE(NssDigest)
 
 static int      xmlSecNssDigestCheckId                  (xmlSecTransformPtr transform);
 static int      xmlSecNssDigestInitialize               (xmlSecTransformPtr transform);
@@ -214,7 +214,7 @@ xmlSecNssDigestVerify(xmlSecTransformPtr transform,
     xmlSecAssert2(ctx->dgstSize > 0, -1);
 
     if(dataSize != ctx->dgstSize) {
-        xmlSecInvalidIntegerDataError2("dataSize", dataSize,
+        xmlSecInvalidSizeDataError2("dataSize", dataSize,
                 "dgstSize", ctx->dgstSize, "dataSize == dgstSize",
                 xmlSecTransformGetName(transform));
         transform->status = xmlSecTransformStatusFail;
@@ -265,17 +265,20 @@ xmlSecNssDigestExecute(xmlSecTransformPtr transform, int last, xmlSecTransformCt
 
         inSize = xmlSecBufferGetSize(in);
         if(inSize > 0) {
-            rv = PK11_DigestOp(ctx->digestCtx, xmlSecBufferGetData(in), inSize);
+            unsigned int inLen;
+
+            XMLSEC_SAFE_CAST_SIZE_TO_UINT(inSize, inLen, return(-1), xmlSecTransformGetName(transform));
+            rv = PK11_DigestOp(ctx->digestCtx, xmlSecBufferGetData(in), inLen);
             if (rv != SECSuccess) {
                 xmlSecNssError("PK11_DigestOp", xmlSecTransformGetName(transform));
                 return(-1);
             }
 
-            ret = xmlSecBufferRemoveHead(in, inSize);
+            ret = xmlSecBufferRemoveHead(in, inLen);
             if(ret < 0) {
                 xmlSecInternalError2("xmlSecBufferRemoveHead",
                                      xmlSecTransformGetName(transform),
-                                     "size=%d", inSize);
+                                     "size=%u", inLen);
                 return(-1);
             }
         }
@@ -288,14 +291,13 @@ xmlSecNssDigestExecute(xmlSecTransformPtr transform, int last, xmlSecTransformCt
                 return(-1);
             }
             xmlSecAssert2(dgstSize > 0, -1);
-            ctx->dgstSize = XMLSEC_SIZE_BAD_CAST(dgstSize);
+            ctx->dgstSize =dgstSize;
 
             if(transform->operation == xmlSecTransformOperationSign) {
                 ret = xmlSecBufferAppend(out, ctx->dgst, ctx->dgstSize);
                 if(ret < 0) {
-                    xmlSecInternalError2("xmlSecBufferAppend",
-                                         xmlSecTransformGetName(transform),
-                                         "size=%d", ctx->dgstSize);
+                    xmlSecInternalError2("xmlSecBufferAppend", xmlSecTransformGetName(transform),
+                        "size=" XMLSEC_SIZE_FMT, ctx->dgstSize);
                     return(-1);
                 }
             }

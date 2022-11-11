@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2016 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:x509
@@ -40,7 +40,7 @@
  * @node:               the pointer to <dsig:X509Data/> node.
  * @keyInfoCtx:         the pointer to <dsig:KeyInfo/> node processing context.
  *
- * Reads the contents of <dsig:X509Data/> node and returns it as
+ * DEPRECATED. Reads the contents of <dsig:X509Data/> node and returns it as
  * a bits mask.
  *
  * Returns: the bit mask representing the <dsig:X509Data/> node content
@@ -60,22 +60,33 @@ xmlSecX509DataGetNodeContent (xmlNodePtr node, xmlSecKeyInfoCtxPtr keyInfoCtx) {
         if(xmlSecCheckNodeName(cur, xmlSecNodeX509Certificate, xmlSecDSigNs)) {
             if(xmlSecIsEmptyNode(cur) == 1) {
                 content |= XMLSEC_X509DATA_CERTIFICATE_NODE;
+            } else {
+                /* ensure return value isn't 0 if there are non-empty elements */
+                content |= (XMLSEC_X509DATA_CERTIFICATE_NODE << 16);
             }
         } else if(xmlSecCheckNodeName(cur, xmlSecNodeX509SubjectName, xmlSecDSigNs)) {
             if(xmlSecIsEmptyNode(cur) == 1) {
                 content |= XMLSEC_X509DATA_SUBJECTNAME_NODE;
+            } else {
+                content |= (XMLSEC_X509DATA_SUBJECTNAME_NODE << 16);
             }
         } else if(xmlSecCheckNodeName(cur, xmlSecNodeX509IssuerSerial, xmlSecDSigNs)) {
             if(xmlSecIsEmptyNode(cur) == 1) {
                 content |= XMLSEC_X509DATA_ISSUERSERIAL_NODE;
+            } else {
+                content |= (XMLSEC_X509DATA_ISSUERSERIAL_NODE << 16);
             }
         } else if(xmlSecCheckNodeName(cur, xmlSecNodeX509SKI, xmlSecDSigNs)) {
             if(xmlSecIsEmptyNode(cur) == 1) {
                 content |= XMLSEC_X509DATA_SKI_NODE;
+            } else {
+                content |= (XMLSEC_X509DATA_SKI_NODE << 16);
             }
         } else if(xmlSecCheckNodeName(cur, xmlSecNodeX509CRL, xmlSecDSigNs)) {
             if(xmlSecIsEmptyNode(cur) == 1) {
                 content |= XMLSEC_X509DATA_CRL_NODE;
+            } else {
+                content |= (XMLSEC_X509DATA_CRL_NODE << 16);
             }
         } else {
             /* todo: fail on unknown child node? */
