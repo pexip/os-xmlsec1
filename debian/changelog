@@ -1,4 +1,4 @@
-xmlsec1 (1.2.36-1pexip1) pexip; urgency=medium
+xmlsec1 (1.2.36-1pexip1) pexip-bullseye-openssl3; urgency=medium
 
   * New upstream release
 
