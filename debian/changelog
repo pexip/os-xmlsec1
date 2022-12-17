@@ -1,3 +1,37 @@
+xmlsec1 (1.2.37-2) unstable; urgency=medium
+
+  * fix build/build-indep to have the same configure flags passed. Properly
+    split build-arch/build-indep
+
+  * upload to unstable 
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 17 Dec 2022 19:03:58 +0100
+
+xmlsec1 (1.2.37-1) experimental; urgency=medium
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster (oldstable):
+    + Build-Depends: Drop versioned constraint on libssl-dev, libxml2-dev and
+      libxslt1-dev.
+    + libxmlsec1-dev: Drop versioned constraint on libssl-dev, libxml2-dev and
+      libxslt1-dev in Depends.
+    + libxmlsec1: Drop versioned constraint on libreoffice-core in Breaks.
+    + libxmlsec1-doc: Drop versioned constraint on libxmlsec1-dev in Replaces.
+    + libxmlsec1-doc: Drop versioned constraint on libxmlsec1-dev in Breaks.
+
+  [ Rene Engelhard ]
+  * New upstream version 1.2.37
+
+ -- Rene Engelhard <rene@debian.org>  Wed, 30 Nov 2022 18:30:49 +0100
+
+xmlsec1 (1.2.36-2) unstable; urgency=medium
+
+  * add .symbols files for the libraries 
+
+  * upload to unstable
+
+ -- Rene Engelhard <rene@debian.org>  Sun, 13 Nov 2022 11:07:13 +0100
+
 xmlsec1 (1.2.36-1) experimental; urgency=medium
 
   * New upstream version 1.2.36

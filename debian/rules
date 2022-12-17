@@ -12,7 +12,8 @@ override_dh_auto_clean:
 	rm -f config.log config.cache config.status
 
 override_dh_auto_configure:
-	if [ ! -d docs.bak ]; then cp -ra docs docs.bak; fi
+
+override_dh_auto_build-arch:
 	dh_auto_configure -- \
 		--enable-manpages-build \
 		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
@@ -20,6 +21,7 @@ override_dh_auto_configure:
 		--disable-apps-crypto-dl \
 		--enable-soap \
 		--enable-openssl3-engines
+	dh_auto_build --no-parallel
 
 override_dh_auto_build-indep:
 	dh_auto_configure -- \
@@ -28,7 +30,8 @@ override_dh_auto_build-indep:
 		--with-html-dir=\$${prefix}/share/doc/libxmlsec1-dev/html \
 		--disable-crypto-dl \
 		--disable-apps-crypto-dl \
-		--enable-soap
+		--enable-soap \
+		--enable-openssl3-engines
 	dh_auto_build --no-parallel
 
 override_dh_auto_test:
