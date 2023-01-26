@@ -1,6 +1,14 @@
+xmlsec1 (1.2.36-1pexip2) pexip; urgency=medium
+
+  * Merge openssl3 changes to bullseye
+  * Move from following experimental to bookworm instead
+
+ -- Steve McIntyre <steve.mcintyre@pexip.com>  Thu, 26 Jan 2023 16:49:24 +0000
+
 xmlsec1 (1.2.36-1pexip1) pexip-bullseye-openssl3; urgency=medium
 
   * New upstream release
+  * Add openssl3 support
 
  -- John-Mark Bell <jmb@pexip.com>  Fri, 10 Nov 2022 19:29:00 +0000
 

@@ -24,7 +24,7 @@ Standards-Version: 4.1.4
 Homepage: https://www.aleksey.com/xmlsec/
 Vcs-Browser: https://salsa.debian.org/xml-sgml-team/xmlsec1
 Vcs-Git: https://salsa.debian.org/xml-sgml-team/xmlsec1.git
-XS-Pexip-Upstream: http://deb.debian.org/debian/ experimental
+XS-Pexip-Upstream: http://deb.debian.org/debian/ bookworm
 
 Package: libxmlsec1-dev
 Section: libdevel
