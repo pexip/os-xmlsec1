@@ -59,7 +59,12 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
-Breaks: libreoffice-core (<< 1:6.0.5~rc2~)
+Breaks:
+ libreoffice-core (<< 1:6.0.5~rc2~),
+ libxmlsec1-openssl (<< 1.2.36~),
+ libxmlsec1-gnutls (<< 1.2.36~),
+ libxmlsec1-nss (<< 1.2.36~),
+ libxmlsec1-gcrypt (<< 1.2.36~)
 Description: XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.

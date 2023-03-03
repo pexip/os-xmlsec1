@@ -1,3 +1,9 @@
+xmlsec1 (1.2.36-1pexip3) pexip; urgency=medium
+
+  * Add breaks to control upgrade
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 03 Mar 2023 11:59:04 +0000
+
 xmlsec1 (1.2.36-1pexip2) pexip; urgency=medium
 
   * Merge openssl3 changes to bullseye
