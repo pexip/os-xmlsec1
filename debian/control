@@ -13,8 +13,8 @@ Build-Depends:
  libgnutls28-dev,
  libnss3-dev,
  libssl-dev (>= 3),
- libxml2-dev (>= 2.8.0),
- libxslt1-dev (>= 1.0.20),
+ libxml2-dev,
+ libxslt1-dev,
  pkg-config,
 Build-Depends-Indep:
  gtk-doc-tools,
@@ -35,13 +35,13 @@ Depends:
  libgnutls28-dev,
  libnss3-dev,
  libssl-dev (>= 3),
- libxml2-dev (>= 2.8.0),
+ libxml2-dev,
  libxmlsec1 (= ${binary:Version}),
  libxmlsec1-gcrypt (= ${binary:Version}),
  libxmlsec1-gnutls (= ${binary:Version}),
  libxmlsec1-nss (= ${binary:Version}),
  libxmlsec1-openssl (= ${binary:Version}),
- libxslt1-dev (>= 1.0.20),
+ libxslt1-dev,
  ${misc:Depends},
 Description: Development files for the XML security library
  The XML Security Library is a C library that implements these XML standards:
@@ -145,8 +145,6 @@ Description: XML security command line processor
 Package: libxmlsec1-doc
 Architecture: all
 Depends: ${misc:Depends}
-Replaces: libxmlsec1-dev (<< 1.2.26-2)
-Breaks: libxmlsec1-dev (<< 1.2.26-2)
 Description: XML security library -- documentation
  The XML Security Library implements standards related to secure handling
  of XML data.
