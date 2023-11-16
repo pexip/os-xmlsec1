@@ -1,3 +1,9 @@
+xmlsec1 (1.2.37-2pexip2) pexip-bookworm; urgency=medium
+
+  * Initial bookworm build
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 16 Nov 2023 10:35:42 +0000
+
 xmlsec1 (1.2.37-2pexip1) pexip; urgency=medium
 
   * New upstream release
