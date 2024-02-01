@@ -1,3 +1,9 @@
+xmlsec1 (1.2.37-2+pexip24u4) pexip-bookworm; urgency=medium
+
+  * New versioning scheme
+
+ -- Mark Hymers <mark.hymers@pexip.com>  Thu, 01 Feb 2024 16:38:54 +0000
+
 xmlsec1 (1.2.37-2pexip3) pexip-bookworm; urgency=medium
 
   * Bookworm build for product distribution
