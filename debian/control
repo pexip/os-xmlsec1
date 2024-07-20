@@ -6,6 +6,7 @@ Uploaders:
  John V. Belmonte <jbelmonte@debian.org>,
  Rene Engelhard <rene@debian.org>,
 Build-Depends:
+ dpkg-dev (>= 1.22.5),
  debhelper (>= 11),
  help2man,
  libgcrypt20-dev,
@@ -35,11 +36,11 @@ Depends:
  libnss3-dev,
  libssl-dev,
  libxml2-dev,
- libxmlsec1 (= ${binary:Version}),
- libxmlsec1-gcrypt (= ${binary:Version}),
- libxmlsec1-gnutls (= ${binary:Version}),
- libxmlsec1-nss (= ${binary:Version}),
- libxmlsec1-openssl (= ${binary:Version}),
+ libxmlsec1t64 (= ${binary:Version}),
+ libxmlsec1t64-gcrypt (= ${binary:Version}),
+ libxmlsec1t64-gnutls (= ${binary:Version}),
+ libxmlsec1t64-nss (= ${binary:Version}),
+ libxmlsec1t64-openssl (= ${binary:Version}),
  libxslt1-dev,
  ${misc:Depends},
 Description: Development files for the XML security library
@@ -51,13 +52,16 @@ Description: Development files for the XML security library
  This package provides development files including documentation, examples,
  headers, static libraries, and configuration support.
 
-Package: libxmlsec1
+Package: libxmlsec1t64
 Section: libs
 Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
+Replaces: libxmlsec1
+Breaks: libxmlsec1 (<< ${source:Version})
+Provides: ${t64:Provides}
 Description: XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.
@@ -66,13 +70,17 @@ Description: XML security library
  Specifically, it provides all XML security library functionality
  except for the cryptography engine.
 
-Package: libxmlsec1-openssl
+Package: libxmlsec1t64-openssl
 Section: libs
 Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
+Replaces: libxmlsec1-openssl
+Breaks: libxmlsec1-openssl (<< ${source:Version})
+Provides: ${t64:Provides}
+X-Time64-Compat: libxmlsec1-openssl
 Description: Openssl engine for the XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.
@@ -81,13 +89,17 @@ Description: Openssl engine for the XML security library
  Specifically, it provides the openssl implementation of the XML security
  library cryptography functions.
 
-Package: libxmlsec1-gnutls
+Package: libxmlsec1t64-gnutls
 Section: libs
 Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
+Replaces: libxmlsec1-gnutls
+Breaks: libxmlsec1-gnutls (<< ${source:Version})
+Provides: ${t64:Provides}
+X-Time64-Compat: libxmlsec1-gnutls
 Description: Gnutls engine for the XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.
@@ -96,13 +108,17 @@ Description: Gnutls engine for the XML security library
  Specifically, it provides the gnutls implementation of the XML security
  library cryptography functions.
 
-Package: libxmlsec1-nss
+Package: libxmlsec1t64-nss
 Section: libs
 Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
+Replaces: libxmlsec1-nss
+Breaks: libxmlsec1-nss (<< ${source:Version})
+Provides: ${t64:Provides}
+X-Time64-Compat: libxmlsec1-nss
 Description: Nss engine for the XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.
@@ -111,13 +127,17 @@ Description: Nss engine for the XML security library
  Specifically, it provides the nss implementation of the XML security
  library cryptography functions.
 
-Package: libxmlsec1-gcrypt
+Package: libxmlsec1t64-gcrypt
 Section: libs
 Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Multi-Arch: same
+Replaces: libxmlsec1-gcrypt
+Breaks: libxmlsec1-gcrypt (<< ${source:Version})
+Provides: ${t64:Provides}
+X-Time64-Compat: libxmlsec1-gcrypt
 Description: Gcrypt engine for the XML security library
  The XML Security Library implements standards related to secure handling
  of XML data.

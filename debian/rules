@@ -10,6 +10,8 @@ override_dh_auto_clean:
 	if [ -d docs.bak ]; then rm -rf docs; mv docs.bak docs; fi
 	rm -f man/xmlsec1-config.1 man/xmlsec1.1
 	rm -f config.log config.cache config.status
+	rm -f docs/api/home.png docs/api/left-insensitive.png docs/api/left.png docs/api/right-insensitive.png docs/api/right.png docs/api/up-insensitive.png docs/api/up.png
+	rm -f docs/api/xmlsec-index.html docs/api/xmlsec.devhelp2
 
 override_dh_auto_configure:
 
@@ -49,7 +51,7 @@ override_dh_install:
 	dh_install
 
 override_dh_installexamples:
-	dh_installexamples examples/*
+	dh_installexamples -plibxmlsec1-dev examples/*
 
 override_dh_installdocs:
 	dh_installdocs -X.sgml --all README.md debian/README.Debian

@@ -86,6 +86,12 @@ if [ "z$crypto" = "zopenssl" -a "z$XMLSEC_OPENSSL_TEST_CONFIG" != "z" ] ; then
     export OPENSSL_CONF="$opensslconf"
 fi
 
+if [ "z$crypto" = "zopenssl" ] ; then
+    # phaos certs use RSA-MD5 which might be disabled
+    extra_vars="$extra_vars OPENSSL_ENABLE_MD5_VERIFY=1"
+    export OPENSSL_ENABLE_MD5_VERIFY=1
+fi
+
 #
 # Setup keys config
 #
@@ -115,7 +121,7 @@ fi
 # in the pkcs12 file to ensure it is loaded correctly to be used
 # with SHA2 algorithms. Worse, the CSP is different for XP and older
 # versions
-if test "z$OS_ARCH" = "zCygwin" || test "z$OS_ARCH" = "zMsys" ; then
+if [ "z$crypto" = "zmscrypto" -o "z$crypto" = "zmscng" ] ; then
     # Samples:
     #   Cygwin	: CYGWIN_NT-5.1
     #   Msys	: MINGW32_NT-5.1

@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:version
@@ -26,7 +26,7 @@ extern "C" {
  * The library version string in the format
  * "$major_number.$minor_number.$sub_minor_number".
  */
-#define XMLSEC_VERSION            "1.2.37"
+#define XMLSEC_VERSION            "1.2.41"
 
 /**
  * XMLSEC_VERSION_MAJOR:
@@ -47,7 +47,7 @@ extern "C" {
  *
  * The library sub-minor version number.
  */
-#define XMLSEC_VERSION_SUBMINOR        37
+#define XMLSEC_VERSION_SUBMINOR        41
 
 /**
  * XMLSEC_VERSION_INFO:
@@ -55,7 +55,7 @@ extern "C" {
  * The library version info string in the format
  * "$major_number+$minor_number:$sub_minor_number:$minor_number".
  */
-#define XMLSEC_VERSION_INFO        "3:37:2"
+#define XMLSEC_VERSION_INFO        "3:41:2"
 
 
 #ifdef __cplusplus

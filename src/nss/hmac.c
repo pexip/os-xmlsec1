@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  * Copyright (c) 2003 America Online, Inc.  All rights reserved.
  */
 /**
@@ -23,7 +23,7 @@
 #include <nspr.h>
 #include <nss.h>
 #include <secoid.h>
-#include <pk11func.h>
+#include <pk11pub.h>
 
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>

@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_ERRORS_H__
 #define __XMLSEC_ERRORS_H__
@@ -346,6 +346,13 @@ extern "C" {
  * "Not valid after" verification failed.
  */
 #define XMLSEC_ERRORS_R_CERT_HAS_EXPIRED                76
+
+ /**
+  * XMLSEC_ERRORS_R_CRL_VERIFY_FAILED:
+  *
+  * CRL verification failed.
+  */
+#define XMLSEC_ERRORS_R_CRL_VERIFY_FAILED               77
 
 /**
  * XMLSEC_ERRORS_R_DSIG_NO_REFERENCES:

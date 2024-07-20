@@ -1,4 +1,4 @@
-libxmlsec1-openssl.so.1 libxmlsec1-openssl #MINVER#
+libxmlsec1-openssl.so.1 libxmlsec1t64-openssl #MINVER#
  xmlSecCryptoGetFunctions_openssl@Base 1.2.31
  xmlSecOpenSSLAppDefaultKeysMngrAdoptKey@Base 1.2.31
  xmlSecOpenSSLAppDefaultKeysMngrInit@Base 1.2.31
@@ -87,7 +87,6 @@ libxmlsec1-openssl.so.1 libxmlsec1-openssl #MINVER#
  xmlSecOpenSSLTransformEcdsaSha256GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformEcdsaSha384GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformEcdsaSha512GetKlass@Base 1.2.31
- xmlSecOpenSSLTransformHmacMd5GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformHmacRipemd160GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformHmacSha1GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformHmacSha224GetKlass@Base 1.2.31
@@ -98,9 +97,7 @@ libxmlsec1-openssl.so.1 libxmlsec1-openssl #MINVER#
  xmlSecOpenSSLTransformKWAes192GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformKWAes256GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformKWDes3GetKlass@Base 1.2.31
- xmlSecOpenSSLTransformMd5GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformRipemd160GetKlass@Base 1.2.31
- xmlSecOpenSSLTransformRsaMd5GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformRsaOaepGetKlass@Base 1.2.31
  xmlSecOpenSSLTransformRsaPkcs1GetKlass@Base 1.2.31
  xmlSecOpenSSLTransformRsaRipemd160GetKlass@Base 1.2.31

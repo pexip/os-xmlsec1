@@ -5,7 +5,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:keyinfo
@@ -62,6 +62,7 @@
 #include <xmlsec/keysmngr.h>
 #include <xmlsec/transforms.h>
 #include <xmlsec/xmlenc.h>
+#include <xmlsec/parser.h>
 #include <xmlsec/keyinfo.h>
 #include <xmlsec/errors.h>
 
@@ -1055,7 +1056,7 @@ xmlSecKeyDataRetrievalMethodXmlRead(xmlSecKeyDataId id, xmlSecKeyPtr key, xmlNod
                 "retrieval type is unknown");
             goto done;
         }
-        
+
         res = 0;
         goto done;
     }
@@ -1173,9 +1174,9 @@ xmlSecKeyDataRetrievalMethodReadXmlResult(xmlSecKeyDataId typeId, xmlSecKeyPtr k
     xmlSecAssert2(keyInfoCtx->mode == xmlSecKeyInfoModeRead, -1);
 
     XMLSEC_SAFE_CAST_SIZE_TO_INT(bufferSize, bufferLen, return(-1), NULL);
-    doc = xmlRecoverMemory((const char*)buffer, bufferLen);
+    doc = xmlReadMemory((const char*)buffer, bufferLen, NULL, NULL, xmlSecParserGetDefaultOptions() | XML_PARSE_RECOVER);
     if(doc == NULL) {
-        xmlSecXmlError("xmlRecoverMemory", xmlSecKeyDataKlassGetName(typeId));
+        xmlSecXmlError("xmlReadMemory", xmlSecKeyDataKlassGetName(typeId));
         return(-1);
     }
 

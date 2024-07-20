@@ -1,4 +1,4 @@
-libxmlsec1-gnutls.so.1 libxmlsec1-gnutls #MINVER#
+libxmlsec1-gnutls.so.1 libxmlsec1t64-gnutls #MINVER#
  xmlSecCryptoGetFunctions_gnutls@Base 1.2.31
  xmlSecGnuTLSASN1IntegerWrite@Base 1.2.31
  xmlSecGnuTLSAppDefaultKeysMngrAdoptKey@Base 1.2.31
@@ -56,7 +56,6 @@ libxmlsec1-gnutls.so.1 libxmlsec1-gnutls #MINVER#
  xmlSecGnuTLSTransformAes256CbcGetKlass@Base 1.2.31
  xmlSecGnuTLSTransformDes3CbcGetKlass@Base 1.2.31
  xmlSecGnuTLSTransformDsaSha1GetKlass@Base 1.2.31
- xmlSecGnuTLSTransformHmacMd5GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformHmacRipemd160GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformHmacSha1GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformHmacSha256GetKlass@Base 1.2.31
@@ -66,9 +65,7 @@ libxmlsec1-gnutls.so.1 libxmlsec1-gnutls #MINVER#
  xmlSecGnuTLSTransformKWAes192GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformKWAes256GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformKWDes3GetKlass@Base 1.2.31
- xmlSecGnuTLSTransformMd5GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformRipemd160GetKlass@Base 1.2.31
- xmlSecGnuTLSTransformRsaMd5GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformRsaRipemd160GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformRsaSha1GetKlass@Base 1.2.31
  xmlSecGnuTLSTransformRsaSha256GetKlass@Base 1.2.31
@@ -86,6 +83,7 @@ libxmlsec1-gnutls.so.1 libxmlsec1-gnutls #MINVER#
  xmlSecGnuTLSX509CertGetIssuerSerial@Base 1.2.31
  xmlSecGnuTLSX509CertGetKey@Base 1.2.31
  xmlSecGnuTLSX509CertGetSubjectDN@Base 1.2.31
+ xmlSecGnuTLSX509CertIsSelfSigned@Base 1.2.41
  xmlSecGnuTLSX509CertRead@Base 1.2.31
  xmlSecGnuTLSX509CrlDebugDump@Base 1.2.31
  xmlSecGnuTLSX509CrlDebugXmlDump@Base 1.2.31

@@ -1,4 +1,4 @@
-libxmlsec1.so.1 libxmlsec1 #MINVER#
+libxmlsec1.so.1 libxmlsec1t64 #MINVER#
  xmlSecAddChild@Base 1.2.31
  xmlSecAddChildNode@Base 1.2.31
  xmlSecAddIDs@Base 1.2.31
