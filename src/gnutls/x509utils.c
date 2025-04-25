@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 /**
  * SECTION:x509utils
@@ -197,6 +197,17 @@ xmlSecGnuTLSX509CertDup(gnutls_x509_crt_t src) {
     /* done */
     xmlSecBufferFinalize(&buf);
     return (res);
+}
+
+
+/* returns 1 if self signed; 0 - if not; <0 on error*/
+int
+xmlSecGnuTLSX509CertIsSelfSigned(gnutls_x509_crt_t cert) {
+    unsigned ret;
+
+    xmlSecAssert2(cert != NULL, -1);
+    ret = gnutls_x509_crt_check_issuer(cert, cert);
+    return ((ret != 0) ? 1 : 0);
 }
 
 xmlChar *
