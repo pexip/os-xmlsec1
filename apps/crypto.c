@@ -5,12 +5,13 @@
  *
  * See Copyright for the status of this software.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #if defined(_MSC_VER) && _MSC_VER < 1900
 #define snprintf _snprintf
 #endif
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <xmlsec/xmlsec.h>

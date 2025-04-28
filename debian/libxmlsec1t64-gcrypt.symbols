@@ -1,4 +1,4 @@
-libxmlsec1-gcrypt.so.1 libxmlsec1-gcrypt #MINVER#
+libxmlsec1-gcrypt.so.1 libxmlsec1t64-gcrypt #MINVER#
  xmlSecCryptoGetFunctions_gcrypt@Base 1.2.31
  xmlSecGCryptAppDefaultKeysMngrAdoptKey@Base 1.2.31
  xmlSecGCryptAppDefaultKeysMngrInit@Base 1.2.31
@@ -43,7 +43,6 @@ libxmlsec1-gcrypt.so.1 libxmlsec1-gcrypt #MINVER#
  xmlSecGCryptTransformAes256CbcGetKlass@Base 1.2.31
  xmlSecGCryptTransformDes3CbcGetKlass@Base 1.2.31
  xmlSecGCryptTransformDsaSha1GetKlass@Base 1.2.31
- xmlSecGCryptTransformHmacMd5GetKlass@Base 1.2.31
  xmlSecGCryptTransformHmacRipemd160GetKlass@Base 1.2.31
  xmlSecGCryptTransformHmacSha1GetKlass@Base 1.2.31
  xmlSecGCryptTransformHmacSha256GetKlass@Base 1.2.31
@@ -53,9 +52,7 @@ libxmlsec1-gcrypt.so.1 libxmlsec1-gcrypt #MINVER#
  xmlSecGCryptTransformKWAes192GetKlass@Base 1.2.31
  xmlSecGCryptTransformKWAes256GetKlass@Base 1.2.31
  xmlSecGCryptTransformKWDes3GetKlass@Base 1.2.31
- xmlSecGCryptTransformMd5GetKlass@Base 1.2.31
  xmlSecGCryptTransformRipemd160GetKlass@Base 1.2.31
- xmlSecGCryptTransformRsaMd5GetKlass@Base 1.2.31
  xmlSecGCryptTransformRsaRipemd160GetKlass@Base 1.2.31
  xmlSecGCryptTransformRsaSha1GetKlass@Base 1.2.31
  xmlSecGCryptTransformRsaSha256GetKlass@Base 1.2.31

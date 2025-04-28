@@ -1,3 +1,51 @@
+xmlsec1 (1.2.41-1) unstable; urgency=medium
+
+  * New upstream version 1.2.41
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 20 Jul 2024 12:50:39 +0200
+
+xmlsec1 (1.2.39-5) unstable; urgency=medium
+
+  * build-depend on dpkg-dev (>= 1.22.5) to be sure 
+
+ -- Rene Engelhard <rene@debian.org>  Thu, 29 Feb 2024 11:42:29 +0000
+
+xmlsec1 (1.2.39-4) unstable; urgency=medium
+
+  * upload to unstable 
+
+ -- Rene Engelhard <rene@debian.org>  Wed, 28 Feb 2024 06:12:28 +0100
+
+xmlsec1 (1.2.39-3) experimental; urgency=medium
+
+  * dh_installexamples -plibxmlsec1-dev (closes: #1064890) 
+
+ -- Rene Engelhard <rene@debian.org>  Tue, 27 Feb 2024 21:23:46 +0100
+
+xmlsec1 (1.2.39-2) experimental; urgency=medium
+
+  * add X-Time64-Compat: headers
+
+ -- Rene Engelhard <rene@debian.org>  Mon, 26 Feb 2024 19:37:13 +0100
+
+xmlsec1 (1.2.39-1) experimental; urgency=medium
+
+  * New upstream version 1.2.39
+
+  * Rename libraries for 64-bit time_t transition.
+
+  * piggyback on t64 rename; accept *Md5GetKlass symbol removals
+    (shouldn't be used anyway and nothing in Debian actually uses it)
+
+ -- Rene Engelhard <rene@debian.org>  Fri, 02 Feb 2024 19:14:13 +0100
+
+xmlsec1 (1.2.38-1) unstable; urgency=medium
+
+  * New upstream version 1.2.38
+  * rm various files in doc/ to clean (closes: #1047643)
+
+ -- Rene Engelhard <rene@debian.org>  Sat, 16 Dec 2023 15:36:32 +0100
+
 xmlsec1 (1.2.37-2+pexip24u4) pexip-bookworm; urgency=medium
 
   * New versioning scheme

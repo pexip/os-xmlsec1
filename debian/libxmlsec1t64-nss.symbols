@@ -1,4 +1,4 @@
-libxmlsec1-nss.so.1 libxmlsec1-nss #MINVER#
+libxmlsec1-nss.so.1 libxmlsec1t64-nss #MINVER#
  xmlSecCryptoGetFunctions_nss@Base 1.2.31
  xmlSecNssAppDefaultKeysMngrAdoptKey@Base 1.2.31
  xmlSecNssAppDefaultKeysMngrInit@Base 1.2.31

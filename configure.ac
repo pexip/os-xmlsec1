@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([xmlsec1],[1.2.37],[http://www.aleksey.com/xmlsec])
+AC_INIT([xmlsec1],[1.2.41],[http://www.aleksey.com/xmlsec])
 
 XMLSEC_PACKAGE=xmlsec1
 XMLSEC_VERSION_MAJOR=1
 XMLSEC_VERSION_MINOR=2
-XMLSEC_VERSION_SUBMINOR=37
+XMLSEC_VERSION_SUBMINOR=41
 XMLSEC_VERSION="$XMLSEC_VERSION_MAJOR.$XMLSEC_VERSION_MINOR.$XMLSEC_VERSION_SUBMINOR"
 XMLSEC_VERSION_INFO=`echo $XMLSEC_VERSION | awk -F. '{ printf "%d:%d:%d", $1+$2, $3, $2 }'`
 XMLSEC_VERSION_SAFE=`echo $XMLSEC_VERSION | sed 's/\./_/g'`
@@ -1883,6 +1883,54 @@ if test "z$build_on_windows" = "zyes" ; then
 fi
 
 dnl ==========================================================================
+dnl See do we need files support
+dnl ==========================================================================
+AC_MSG_CHECKING(for files support)
+AC_ARG_ENABLE([files], [AS_HELP_STRING([--enable-files],[enable files support (yes)])])
+if test "z$enable_files" = "zno" ; then
+    XMLSEC_DEFINES="$XMLSEC_DEFINES -DXMLSEC_NO_FILES=1"
+    XMLSEC_NO_FILES="1"
+    AC_MSG_RESULT([no (tests will be broken!)])
+else
+    XMLSEC_NO_FILES="0"
+    AC_MSG_RESULT([yes])
+fi
+AM_CONDITIONAL(XMLSEC_NO_FILES, test "z$XMLSEC_NO_FILES" = "z1")
+AC_SUBST(XMLSEC_NO_FILES)
+
+dnl ==========================================================================
+dnl See do we need FTP support
+dnl ==========================================================================
+AC_MSG_CHECKING(for FTP support)
+AC_ARG_ENABLE([ftp], [AS_HELP_STRING([--enable-ftp],[enable FTP support (no, deprecated)])])
+if test "z$enable_ftp" = "zyes" ; then
+    XMLSEC_NO_FTP="0"
+    AC_MSG_RESULT([yes (deprecated)])
+else
+    XMLSEC_DEFINES="$XMLSEC_DEFINES -DXMLSEC_NO_FTP=1"
+    XMLSEC_NO_FTP="1"
+    AC_MSG_RESULT([disabled])
+fi
+AM_CONDITIONAL(XMLSEC_NO_FTP, test "z$XMLSEC_NO_FTP" = "z1")
+AC_SUBST(XMLSEC_NO_FTP)
+
+dnl ==========================================================================
+dnl See do we need HTTP support
+dnl ==========================================================================
+AC_MSG_CHECKING(for HTTP support)
+AC_ARG_ENABLE([http], [AS_HELP_STRING([--enable-http],[enable HTTP support (no, deprecated)])])
+if test "z$enable_http" = "zyes" ; then
+    XMLSEC_NO_HTTP="0"
+    AC_MSG_RESULT([yes])
+else
+    XMLSEC_DEFINES="$XMLSEC_DEFINES -DXMLSEC_NO_HTTP=1"
+    XMLSEC_NO_HTTP="1"
+    AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL(XMLSEC_NO_HTTP, test "z$XMLSEC_NO_HTTP" = "z1")
+AC_SUBST(XMLSEC_NO_HTTP)
+
+dnl ==========================================================================
 dnl See do we need MD5 support
 dnl ==========================================================================
 AC_MSG_CHECKING(for MD5 support)
@@ -1994,7 +2042,6 @@ fi
 AM_CONDITIONAL(XMLSEC_NO_SHA512, test "z$XMLSEC_NO_SHA512" = "z1")
 AC_SUBST(XMLSEC_NO_SHA512)
 
-
 dnl ==========================================================================
 dnl See do we need HMAC support
 dnl ==========================================================================
@@ -2026,6 +2073,22 @@ else
 fi
 AM_CONDITIONAL(XMLSEC_NO_DSA, test "z$XMLSEC_NO_DSA" = "z1")
 AC_SUBST(XMLSEC_NO_DSA)
+
+dnl ==========================================================================
+dnl See do we need MD5 support
+dnl ==========================================================================
+AC_MSG_CHECKING(for MD5 support)
+AC_ARG_ENABLE([md5], [AS_HELP_STRING([--enable-md5],[enable MD5 support (no, deprecated)])])
+if test "z$enable_md5" = "zyes" ; then
+    XMLSEC_NO_MD5="0"
+    AC_MSG_RESULT([yes (deprecated)])
+else
+    XMLSEC_DEFINES="$XMLSEC_DEFINES -DXMLSEC_NO_MD5=1"
+    XMLSEC_NO_MD5="1"
+    AC_MSG_RESULT([disabled])
+fi
+AM_CONDITIONAL(XMLSEC_NO_MD5, test "z$XMLSEC_NO_MD5" = "z1")
+AC_SUBST(XMLSEC_NO_MD5)
 
 dnl ==========================================================================
 dnl See do we need RSA support
@@ -2224,6 +2287,9 @@ AC_MSG_CHECKING(for static linking)
 AC_ARG_ENABLE([static_linking], [AS_HELP_STRING([--enable-static-linking],[enable static linking (no)])])
 if test "z$enable_static_linking" = "zyes" -o "z$enable_static_linking" = "ztrue" ; then
     XMLSEC_STATIC_BINARIES="-static"
+    if test "z$build_on_windows" = "zyes" ; then
+        XMLSEC_DEFINES="$XMLSEC_DEFINES -DXMLSEC_STATIC=1"
+    fi
     XMLSEC_APP_DEFINES="$XMLSEC_APP_DEFINES -DXMLSEC_STATIC=1"
     enable_crypto_dl="no"
     AC_MSG_RESULT([yes])
@@ -2382,7 +2448,7 @@ if test "z$enable_pedantic" = "zyes" ; then
     CFLAGS="$CFLAGS -Wconversion -Wunused -Wshadow -Wpointer-arith -Wcast-align"
     CFLAGS="$CFLAGS -Wwrite-strings -Waggregate-return -Wmissing-prototypes"
     CFLAGS="$CFLAGS -Wnested-externs -Wredundant-decls"
-    
+
     if test "z$build_on_mac" = "zno" ; then
         CFLAGS="$CFLAGS -Wformat-overflow=2 -Wformat-signedness"
     fi

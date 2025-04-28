@@ -6,7 +6,7 @@
  * This is free software; see Copyright file in the source
  * distribution for preciese wording.
  *
- * Copyright (C) 2002-2022 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
+ * Copyright (C) 2002-2024 Aleksey Sanin <aleksey@aleksey.com>. All Rights Reserved.
  */
 #ifndef __XMLSEC_EXPORTS_H__
 #define __XMLSEC_EXPORTS_H__
@@ -47,7 +47,7 @@ extern "C" {
 #      if !defined(XMLSEC_STATIC)
 #        define XMLSEC_EXPORT __declspec(dllimport)
 #      else
-#        define XMLSEC_EXPORT
+#        define XMLSEC_EXPORT extern
 #      endif
 #    endif /* defined(IN_XMLSEC) */
    /* This holds on all other platforms/compilers, which are easier to
@@ -71,7 +71,7 @@ extern "C" {
 #      if !defined(XMLSEC_STATIC)
 #        define XMLSEC_CRYPTO_EXPORT __declspec(dllimport)
 #      else
-#        define XMLSEC_CRYPTO_EXPORT
+#        define XMLSEC_CRYPTO_EXPORT extern
 #      endif
 #    endif /* defined(IN_XMLSEC_CRYPTO) */
    /* This holds on all other platforms/compilers, which are easier to

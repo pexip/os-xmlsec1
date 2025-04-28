@@ -472,17 +472,7 @@ execDSigTest $res_success \
     "aleksey-xmldsig-01/enveloping-expired-cert" \
     "sha1 rsa-sha1" \
     "rsa x509" \
-    "--trusted-$cert_format $topfolder/keys/cacert.$cert_format --enabled-key-data x509 --verification-gmt-time 2014-05-24+00:00:00"
-
-
-execDSigTest $res_success \
-    "" \
-    "aleksey-xmldsig-01/dtd-hmac-91" \
-    "sha1 hmac-sha1" \
-    "hmac" \
-    "--hmackey $topfolder/keys/hmackey.bin --dtd-file $topfolder/aleksey-xmldsig-01/dtd-hmac-91.dtd" \
-    "--hmackey $topfolder/keys/hmackey.bin --dtd-file $topfolder/aleksey-xmldsig-01/dtd-hmac-91.dtd" \
-    "--hmackey $topfolder/keys/hmackey.bin --dtd-file $topfolder/aleksey-xmldsig-01/dtd-hmac-91.dtd"
+    "--trusted-$cert_format $topfolder/keys/cacert.$cert_format --enabled-key-data x509 --verification-gmt-time 2022-12-14+00:00:00"
 
 execDSigTest $res_success \
     "" \
@@ -501,6 +491,27 @@ execDSigTest $res_success \
     "--trusted-$cert_format $topfolder/keys/cacert.$cert_format --untrusted-$cert_format $topfolder/keys/ca2cert.$cert_format  --untrusted-$cert_format $topfolder/keys/rsacert.$cert_format --enabled-key-data x509" \
     "$priv_key_option $topfolder/keys/rsakey.$priv_key_format --pwd secret123" \
     "--trusted-$cert_format $topfolder/keys/cacert.$cert_format --untrusted-$cert_format $topfolder/keys/ca2cert.$cert_format  --untrusted-$cert_format $topfolder/keys/rsacert.$cert_format --enabled-key-data x509"
+
+
+# Test was created using the following command:
+# xmlsec.exe sign --crypto openssl  --lax-key-search --privkey-pem tests/keys/same-subj-key1.pem,tests/keys/same-subj-cert1.pem tests/aleksey-xmldsig-01/enveloped-x509-same-subj-cert.tmpl
+# this should succeeed with both intermidiate and trusted certs provided
+extra_message="Cert chaing is good"
+execDSigTest $res_success \
+    "" \
+    "aleksey-xmldsig-01/enveloped-x509-same-subj-cert" \
+    "sha256 rsa-sha256" \
+    "x509" \
+    "--trusted-$cert_format $topfolder/keys/same-subj-cert1.$cert_format --enabled-key-data x509"
+
+# this should fail: missing intermidiate cert (ca2cert)
+extra_message="Negative test: Same subject but wrong cert"
+execDSigTest $res_fail \
+    "" \
+    "aleksey-xmldsig-01/enveloped-x509-same-subj-cert" \
+    "sha256 rsa-sha256" \
+    "x509" \
+    "--trusted-$cert_format $topfolder/keys/same-subj-cert2.$cert_format --enabled-key-data x509"
 
 ##########################################################################
 #
@@ -1044,7 +1055,7 @@ fi
 
 execDSigTest $res_fail \
     "aleksey-xmldsig-01" \
-    "enveloping-sha256-rsa-sha256-verify" \
+    "enveloping-sha256-rsa-sha256" \
     "sha256 rsa-sha256" \
     "rsa x509" \
     "--enabled-key-data x509"
@@ -1054,7 +1065,7 @@ execDSigTest $res_fail \
 # happen correctly.
 execDSigTest $res_success \
     "aleksey-xmldsig-01" \
-    "enveloping-sha256-rsa-sha256-verify" \
+    "enveloping-sha256-rsa-sha256" \
     "sha256 rsa-sha256" \
     "rsa x509" \
     "--enabled-key-data x509 --insecure"
