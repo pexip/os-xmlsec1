@@ -1,3 +1,5 @@
+Build without using functions deprecated in openssl 3.
+
 diff --git a/include/xmlsec/openssl/crypto.h b/include/xmlsec/openssl/crypto.h
 index f3db718..8f74878 100644
 --- a/include/xmlsec/openssl/crypto.h
